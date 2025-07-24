@@ -19,7 +19,7 @@ struct SettingsView: View {
                                                 .frame(width: 20)
                                                 .foregroundColor(.accentColor)
                                             Text(section.rawValue)
-        })
+                                        }
                                     }
                                 }
                             }
@@ -103,7 +103,7 @@ struct SettingsSidebar: View {
                             if viewStore.selectedSection == section {
                                 Image(systemName: "chevron.right")
                                     .foregroundColor(.accentColor)
-        })
+                            }
                         }
                     })
                     .buttonStyle(PlainButtonStyle())
@@ -173,7 +173,7 @@ struct GeneralSettingsView: View {
                             )) {
                                 ForEach(SettingsFeature.AppTheme.allCases, id: \.self) { theme in
                                     Text(theme.rawValue).tag(theme)
-        })
+                                }
                             }
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(width: 250)
@@ -410,7 +410,7 @@ struct APISettingsView: View {
                             Text("Claude 4 Sonnet")
                                 .font(.headline)
                                 .foregroundColor(.blue)
-        })
+        }
 
                         Text("The latest Claude model is used for all document generation")
                             .font(.caption)
@@ -658,7 +658,7 @@ struct DocumentSettingsView: View {
                             )) {
                                 ForEach(SettingsFeature.TemplateSet.allCases, id: \.self) { templateSet in
                                     Text(templateSet.rawValue).tag(templateSet)
-        })
+                                }
                             }
                             .pickerStyle(MenuPickerStyle())
                             .frame(width: 200)
@@ -703,7 +703,7 @@ struct NotificationSettingsView: View {
                             get: { $0.notificationSettings.enableNotifications },
                             send: { .toggleNotifications($0) }
                         ))
-        })
+                    }
                 }
             }
         })
@@ -728,7 +728,7 @@ struct DataPrivacySettingsView: View {
                         Text("Help improve AIKO by sharing anonymous usage data")
                             .font(.caption)
                             .foregroundColor(.secondary)
-        })
+                    }
                 }
 
                 SettingsSection(title: "Data Management") {
@@ -768,7 +768,7 @@ struct AdvancedSettingsView: View {
                             get: { $0.advancedSettings.showDetailedErrors },
                             send: { .toggleDetailedErrors($0) }
                         ))
-        })
+                    }
                 }
 
                 SettingsSection(title: "Performance") {

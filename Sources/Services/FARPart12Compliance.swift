@@ -283,8 +283,7 @@ extension FARPart12ComplianceService: DependencyKey {
 
                 // Check which research methods were used
                 for method in MarketResearchCompliance.ResearchMethod.allCases where lowercaseContent.contains(method.rawValue.lowercased()) {
-                        usedMethods.append(method)
-                    }
+                    usedMethods.append(method)
                 }
 
                 // Check for key findings

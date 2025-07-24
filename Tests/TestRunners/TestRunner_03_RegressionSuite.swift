@@ -1,4 +1,4 @@
-@testable import AIKO
+@testable import AppCore
 import XCTest
 
 /// Comprehensive regression test suite for AIKO-IOS

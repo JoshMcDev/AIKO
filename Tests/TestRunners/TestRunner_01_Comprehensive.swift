@@ -1,4 +1,4 @@
-@testable import AIKO
+@testable import AppCore
 import XCTest
 
 /// Comprehensive test runner that executes all tests and measures MOP/MOE scores

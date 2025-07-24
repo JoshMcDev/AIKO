@@ -1359,7 +1359,6 @@ extension UserPatternLearningEngine {
             }
         }
     }
-}
 
 // MARK: - Additional Supporting Types
 

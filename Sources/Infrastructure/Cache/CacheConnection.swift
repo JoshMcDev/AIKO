@@ -62,11 +62,7 @@ public actor CacheConnection {
     /// Get value from remote node
     public func get(key: String) async throws -> Data? {
         guard let payload = key.data(using: .utf8) else {
-<<<<<<< HEAD
-            throw CacheError.invalidKey("Invalid UTF-8 key: \(key)")
-=======
             throw CacheConnectionError.invalidKey
->>>>>>> Main
         }
         let response = try await sendRequest(type: .get, payload: payload)
 
@@ -91,11 +87,7 @@ public actor CacheConnection {
     /// Remove value from remote node
     public func remove(key: String) async throws {
         guard let payload = key.data(using: .utf8) else {
-<<<<<<< HEAD
-            throw CacheError.invalidKey("Invalid UTF-8 key: \(key)")
-=======
             throw CacheConnectionError.invalidKey
->>>>>>> Main
         }
         _ = try await sendRequest(type: .remove, payload: payload)
     }

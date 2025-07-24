@@ -6,7 +6,7 @@
 //  Example: test_LoginScreen_tapSubmitButton_navigatesToHome()
 //
 
-@testable import AIKO
+@testable import AppCore
 import ComposableArchitecture
 import ViewInspector
 import XCTest

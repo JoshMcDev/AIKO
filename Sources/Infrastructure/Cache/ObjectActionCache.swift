@@ -13,7 +13,7 @@ public actor ObjectActionCache {
     private var l2Cache = CompressedCache<CacheKey, CachedAction>(maxSize: 1000)
 
     /// L3 Cache: Disk-based cache for persistent storage
-    private let l3Cache: DiskCache
+    private nonisolated let l3Cache: any OfflineCacheProtocol
 
     // MARK: - Cache Configuration
 
@@ -145,7 +145,12 @@ public actor ObjectActionCache {
             evictionPolicy: .leastRecentlyUsed
         )
 
-        l3Cache = DiskCache(configuration: cacheConfig)
+        do {
+            l3Cache = try DiskCache(configuration: cacheConfig) as any OfflineCacheProtocol
+        } catch {
+            // Fallback to memory cache if disk cache fails
+            l3Cache = MemoryCache(configuration: cacheConfig) as any OfflineCacheProtocol
+        }
     }
 
     // MARK: - Cache Operations
@@ -176,7 +181,7 @@ public actor ObjectActionCache {
         metrics.l2Misses += 1
 
         // L3 lookup
-        if let cached = try? await l3Cache.retrieve(CachedAction.self, forKey: key.hashValue.description), !cached.isExpired {
+        if let cached = try? await retrieveFromL3Cache(key: key.hashValue.description), !cached.isExpired {
             metrics.l3Hits += 1
 
             // Promote to L2 and L1
@@ -220,7 +225,7 @@ public actor ObjectActionCache {
         case .l2:
             await l2Cache.set(key, value: cached)
         case .l3:
-            try? await l3Cache.store(cached, forKey: key.hashValue.description)
+            try? await storeToL3Cache(cached, key: key.hashValue.description)
         }
     }
 
@@ -256,7 +261,7 @@ public actor ObjectActionCache {
 
         l1Cache.clear()
         await l2Cache.clear()
-        try? await l3Cache.clearAll()
+        try? await clearL3Cache()
 
         let duration = Date().timeIntervalSince(startTime)
 
@@ -398,6 +403,23 @@ public actor ObjectActionCache {
             // This would trigger pre-computation in a real system
             // For now, we'll just mark it for warming
         }
+    }
+    
+    // MARK: - Actor-Isolated Cache Helpers
+    
+    /// Actor-isolated helper for L3 cache retrieval
+    private func retrieveFromL3Cache(key: String) async throws -> CachedAction? {
+        return try await l3Cache.retrieve(CachedAction.self, forKey: key)
+    }
+    
+    /// Actor-isolated helper for L3 cache storage
+    private func storeToL3Cache(_ cached: CachedAction, key: String) async throws {
+        try await l3Cache.store(cached, forKey: key)
+    }
+    
+    /// Actor-isolated helper for L3 cache clearing
+    private func clearL3Cache() async throws {
+        try await l3Cache.clearAll()
     }
 }
 

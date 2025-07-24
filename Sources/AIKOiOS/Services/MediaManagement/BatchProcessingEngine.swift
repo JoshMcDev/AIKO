@@ -7,7 +7,7 @@ import Foundation
 public actor BatchProcessingEngine: BatchProcessingEngineProtocol {
     private var operations: [UUID: BatchOperation] = [:]
     private var handles: [UUID: BatchOperationHandle] = [:]
-    private var settings: BatchEngineSettings = .default
+    private var settings = BatchEngineSettings()
 
     public init() {}
 
@@ -33,12 +33,15 @@ public actor BatchProcessingEngine: BatchProcessingEngineProtocol {
 
     public func getOperationStatus(_: BatchOperationHandle) async -> MediaBatchOperationStatus {
         // TODO: Get operation status
-        .failed
+        MediaBatchOperationStatus()
     }
 
     public func getOperationProgress(_: BatchOperationHandle) async -> BatchProgress {
         // TODO: Get operation progress
-        BatchProgress()
+        BatchProgress(
+            operationId: UUID(),
+            totalItems: 0
+        )
     }
 
     public func getOperationResults(_: BatchOperationHandle) async -> [BatchOperationResult] {

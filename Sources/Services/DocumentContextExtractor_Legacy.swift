@@ -111,15 +111,14 @@ public final class DocumentContextExtractor: @unchecked Sendable {
 
         // Extract total price from entities
         for entity in document.extractedData.entities where entity.type == .price {
-                // Remove currency symbols and convert to Decimal
-                let cleanPrice = entity.value
-                    .replacingOccurrences(of: "$", with: "")
-                    .replacingOccurrences(of: ",", with: "")
+            // Remove currency symbols and convert to Decimal
+            let cleanPrice = entity.value
+                .replacingOccurrences(of: "$", with: "")
+                .replacingOccurrences(of: ",", with: "")
 
-                if let price = Decimal(string: cleanPrice) {
-                    totalPrice = price
-                    break
-                }
+            if let price = Decimal(string: cleanPrice) {
+                totalPrice = price
+                break
             }
         }
 

@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Media Error Types
 
 /// Comprehensive error types for media operations
-public enum MediaError: Error, Sendable, LocalizedError {
+public enum MediaError: Error, Sendable, LocalizedError, Equatable {
     case invalidInput(String)
     case fileNotFound(String)
     case unsupportedFormat(String)
@@ -20,6 +20,16 @@ public enum MediaError: Error, Sendable, LocalizedError {
     case quotaExceeded(String)
     case versionMismatch(String)
     case unknown(String)
+    
+    // Specific media operation errors
+    case filePickingFailed(String)
+    case photoLibraryAccessFailed(String)
+    case cameraAccessFailed(String)
+    case screenshotFailed(String)
+    case metadataExtractionFailed(String)
+    case validationFailed(String)
+    case batchOperationFailed(String)
+    case workflowExecutionFailed(String)
 
     public var errorDescription: String? {
         switch self {
@@ -55,6 +65,22 @@ public enum MediaError: Error, Sendable, LocalizedError {
             "Version mismatch: \(message)"
         case let .unknown(message):
             "Unknown error: \(message)"
+        case let .filePickingFailed(message):
+            "File picking failed: \(message)"
+        case let .photoLibraryAccessFailed(message):
+            "Photo library access failed: \(message)"
+        case let .cameraAccessFailed(message):
+            "Camera access failed: \(message)"
+        case let .screenshotFailed(message):
+            "Screenshot failed: \(message)"
+        case let .metadataExtractionFailed(message):
+            "Metadata extraction failed: \(message)"
+        case let .validationFailed(message):
+            "Validation failed: \(message)"
+        case let .batchOperationFailed(message):
+            "Batch operation failed: \(message)"
+        case let .workflowExecutionFailed(message):
+            "Workflow execution failed: \(message)"
         }
     }
 
@@ -92,6 +118,22 @@ public enum MediaError: Error, Sendable, LocalizedError {
             "The data version is incompatible with the current system"
         case .unknown:
             "An unexpected error occurred"
+        case .filePickingFailed:
+            "The file picker operation failed"
+        case .photoLibraryAccessFailed:
+            "Unable to access the photo library"
+        case .cameraAccessFailed:
+            "Camera access was denied or failed"
+        case .screenshotFailed:
+            "Screenshot capture failed"
+        case .metadataExtractionFailed:
+            "Failed to extract metadata from media"
+        case .validationFailed:
+            "Media validation failed"
+        case .batchOperationFailed:
+            "Batch processing operation failed"
+        case .workflowExecutionFailed:
+            "Workflow execution encountered an error"
         }
     }
 
@@ -129,6 +171,22 @@ public enum MediaError: Error, Sendable, LocalizedError {
             "Update the application or convert the data"
         case .unknown:
             "Contact support if the problem persists"
+        case .filePickingFailed:
+            "Try selecting files again or check file permissions"
+        case .photoLibraryAccessFailed:
+            "Grant photo library access in Settings and try again"
+        case .cameraAccessFailed:
+            "Enable camera permissions in Settings"
+        case .screenshotFailed:
+            "Try taking the screenshot again"
+        case .metadataExtractionFailed:
+            "Verify the file is not corrupted and try again"
+        case .validationFailed:
+            "Check file format and try with a different file"
+        case .batchOperationFailed:
+            "Retry the batch operation or process files individually"
+        case .workflowExecutionFailed:
+            "Review workflow settings and try again"
         }
     }
 }

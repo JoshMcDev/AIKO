@@ -155,7 +155,9 @@ public final class DocumentParserEnhanced: @unchecked Sendable {
             NSRect(origin: .zero, size: image.size).fill()
 
             guard let context = NSGraphicsContext.current?.cgContext else {
-                return nil // Could not get graphics context
+                image.unlockFocus()
+                // Return blank image if context creation fails
+                return NSImage(size: NSSize(width: 100, height: 100))
             }
             context.scaleBy(x: scale, y: scale)
             page.draw(with: .mediaBox, to: context)

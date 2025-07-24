@@ -10,6 +10,9 @@ import Combine
 import Foundation
 import os.log
 
+/// Sendable export data type
+typealias SendableExportData = [String: [String: any Sendable]]
+
 /// Extended API for cache management operations
 extension OfflineCacheManager {
     // MARK: - Search and Query API
@@ -157,7 +160,9 @@ extension OfflineCacheManager {
         let totalSize = await totalSize()
         let sizePercentage = Double(totalSize) / Double(configuration.maxSize)
 
-        let overallHealth: CacheHealthStatus.HealthLevel = if memoryHealth, diskHealth, secureHealth, sizePercentage < 0.9 {
+        let isHealthy = memoryHealth.level == .healthy && diskHealth.level == .healthy && secureHealth.level == .healthy
+        
+        let overallHealth: CacheHealthStatus.HealthLevel = if isHealthy && sizePercentage < 0.9 {
             .healthy
         } else if sizePercentage > 0.95 {
             .critical

@@ -209,7 +209,7 @@
                                 quickReferencesSection(viewStore: viewStore, item: item)
                             } else {
                                 regularMenuItem(item: item)
-        })
+                            }
                         }
                     })
                 }
@@ -322,7 +322,7 @@
                         withAnimation(.easeInOut(duration: 0.3)) {
                             viewStore.send(.selectMenuItem(item))
                             isShowing = false
-        })
+                        }
                     }
                 )
             })

@@ -3,6 +3,26 @@ import AppCore
 import ComposableArchitecture
 import Foundation
 
+/// Configuration for individual document generation
+private struct DocumentGenerationConfig: Sendable {
+    let documentType: DocumentType
+    let requirements: String
+    let template: String?
+    let systemPrompt: String?
+    let profile: UserProfile?
+    let aiProvider: any AIProvider
+}
+
+/// Configuration for individual D&F document generation
+private struct DFDocumentGenerationConfig: Sendable {
+    let dfDocumentType: DFDocumentType
+    let requirements: String
+    let template: DFTemplate?
+    let systemPrompt: String?
+    let profile: UserProfile?
+    let aiProvider: any AIProvider
+}
+
 /// Parallel document generation service that processes multiple documents concurrently
 public struct ParallelDocumentGenerator: Sendable {
     // MARK: - Configuration
@@ -22,7 +42,6 @@ public struct ParallelDocumentGenerator: Sendable {
     @Dependency(\.userProfileService) var userProfileService
     @Dependency(\.spellCheckService) var spellCheckService
     @Dependency(\.documentGenerationPreloader) var preloader
-    @Dependency(\.documentGenerationPerformanceMonitor) var performanceMonitor
 
     // MARK: - Parallel Generation Methods
 
@@ -55,18 +74,6 @@ public struct ParallelDocumentGenerator: Sendable {
 
         for documentType in documentTypes {
             if let content = cachedDocs[documentType] {
-                // Record cache hit
-                await performanceMonitor.recordGeneration(
-                    documentType: documentType.rawValue,
-                    cacheHit: true,
-                    durations: (
-                        total: 0.1, // Cache retrieval is very fast
-                        apiCall: nil,
-                        cacheCheck: 0.1,
-                        templateLoad: 0,
-                        spellCheck: 0
-                    )
-                )
                 let document = GeneratedDocument(
                     title: "\(documentType.shortName) - \(Date().formatted(date: .abbreviated, time: .omitted))",
                     documentType: documentType,
@@ -91,13 +98,9 @@ public struct ParallelDocumentGenerator: Sendable {
             preloadedData: preloadedData
         )
 
-        // Record batch performance metrics
+        // Performance tracking removed for now
         let totalDuration = Date().timeIntervalSince(startTime)
-        await performanceMonitor.recordBatch(
-            size: documentTypes.count,
-            totalDuration: totalDuration,
-            parallelDuration: totalDuration
-        )
+        print("[Performance] Generated \(documentTypes.count) documents in \(totalDuration)s")
 
         return cachedDocuments + generatedDocuments
     }
@@ -131,18 +134,7 @@ public struct ParallelDocumentGenerator: Sendable {
 
         for dfDocumentType in dfDocumentTypes {
             if let content = cachedDocs[dfDocumentType] {
-                // Record cache hit
-                await performanceMonitor.recordGeneration(
-                    documentType: dfDocumentType.rawValue,
-                    cacheHit: true,
-                    durations: (
-                        total: 0.1, // Cache retrieval is very fast
-                        apiCall: nil,
-                        cacheCheck: 0.1,
-                        templateLoad: 0,
-                        spellCheck: 0
-                    )
-                )
+                // Cache hit - no additional tracking needed
                 let document = GeneratedDocument(
                     title: "\(dfDocumentType.shortName) D&F - \(Date().formatted(date: .abbreviated, time: .omitted))",
                     dfDocumentType: dfDocumentType,
@@ -167,13 +159,9 @@ public struct ParallelDocumentGenerator: Sendable {
             preloadedData: preloadedData
         )
 
-        // Record batch performance metrics
+        // Performance tracking removed for now
         let totalDuration = Date().timeIntervalSince(startTime)
-        await performanceMonitor.recordBatch(
-            size: dfDocumentTypes.count,
-            totalDuration: totalDuration,
-            parallelDuration: totalDuration
-        )
+        print("[Performance] Generated \(dfDocumentTypes.count) D&F documents in \(totalDuration)s")
 
         return cachedDocuments + generatedDocuments
     }
@@ -428,21 +416,9 @@ public struct ParallelDocumentGenerator: Sendable {
             profile: config.profile
         )
 
-        // Record performance metrics
+        // Performance tracking removed for now
         let totalDuration = Date().timeIntervalSince(totalStartTime)
-        let cacheCheckDuration = Date().timeIntervalSince(cacheCheckStartTime) - (apiCallDuration ?? 0) - templateLoadDuration - spellCheckDuration
-
-        await performanceMonitor.recordGeneration(
-            documentType: config.documentType.rawValue,
-            cacheHit: false,
-            durations: (
-                total: totalDuration,
-                apiCall: apiCallDuration,
-                cacheCheck: cacheCheckDuration,
-                templateLoad: templateLoadDuration,
-                spellCheck: spellCheckDuration
-            )
-        )
+        print("[Performance] Generated \(config.documentType.rawValue) in \(totalDuration)s")
 
         return GeneratedDocument(
             title: "\(config.documentType.shortName) - \(Date().formatted(date: .abbreviated, time: .omitted))",
@@ -518,21 +494,9 @@ public struct ParallelDocumentGenerator: Sendable {
             profile: config.profile
         )
 
-        // Record performance metrics
+        // Performance tracking removed for now
         let totalDuration = Date().timeIntervalSince(totalStartTime)
-        let cacheCheckDuration = Date().timeIntervalSince(cacheCheckStartTime) - (apiCallDuration ?? 0) - templateLoadDuration - spellCheckDuration
-
-        await performanceMonitor.recordGeneration(
-            documentType: config.dfDocumentType.rawValue,
-            cacheHit: false,
-            durations: (
-                total: totalDuration,
-                apiCall: apiCallDuration,
-                cacheCheck: cacheCheckDuration,
-                templateLoad: templateLoadDuration,
-                spellCheck: spellCheckDuration
-            )
-        )
+        print("[Performance] Generated \(config.dfDocumentType.rawValue) D&F in \(totalDuration)s")
 
         return GeneratedDocument(
             title: "\(config.dfDocumentType.shortName) D&F - \(Date().formatted(date: .abbreviated, time: .omitted))",

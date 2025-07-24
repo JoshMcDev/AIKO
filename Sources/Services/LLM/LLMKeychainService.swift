@@ -1,6 +1,29 @@
 import Foundation
 import Security
 
+// MARK: - LLM Keychain Error
+
+/// Errors that can occur during keychain operations
+public enum LLMKeychainError: Error, LocalizedError {
+    case encodingError(String)
+    case keychainError(OSStatus)
+    case notFound
+    case invalidData
+    
+    public var errorDescription: String? {
+        switch self {
+        case .encodingError(let message):
+            return "Encoding error: \(message)"
+        case .keychainError(let status):
+            return "Keychain error: \(status)"
+        case .notFound:
+            return "API key not found"
+        case .invalidData:
+            return "Invalid keychain data"
+        }
+    }
+}
+
 // MARK: - LLM Keychain Service
 
 /// Secure storage for LLM provider API keys using iOS/macOS Keychain

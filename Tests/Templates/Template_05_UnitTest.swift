@@ -6,7 +6,7 @@
 //  Example: test_authenticate_withValidCredentials_returnsSuccess()
 //
 
-@testable import AIKO
+@testable import AppCore
 import ComposableArchitecture
 import XCTest
 

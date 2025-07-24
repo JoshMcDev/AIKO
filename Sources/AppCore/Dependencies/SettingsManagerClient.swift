@@ -26,17 +26,10 @@ extension SettingsManagerClient: TestDependencyKey {
         saveAPIKey: { _ in },
         loadAPIKey: { "preview-key" },
         validateAPIKey: { _ in true },
-<<<<<<< HEAD
-        exportData: { _ in URL(string: "file://test.json") ?? URL(fileURLWithPath: "/tmp/test.json") },
-        importData: { _ in },
-        clearCache: {},
-        performBackup: { _ in URL(string: "file://backup.json") ?? URL(fileURLWithPath: "/tmp/backup.json") },
-=======
         exportData: { _ in URL(fileURLWithPath: "/tmp/test.json") },
         importData: { _ in },
         clearCache: {},
         performBackup: { _ in URL(fileURLWithPath: "/tmp/backup.json") },
->>>>>>> Main
         restoreBackup: { _, _ in }
     )
 }

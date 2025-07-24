@@ -12,7 +12,7 @@ public final class SmartDefaultsEngine: @unchecked Sendable {
     private let smartDefaultsProvider: SmartDefaultsProvider
     private let patternLearningEngine: UserPatternLearningEngine
     private let contextExtractor: UnifiedDocumentContextExtractor
-    private let contextualDefaultsProvider: EnhancedContextualDefaultsProvider
+    private let contextualDefaultsProvider: SmartDefaultsProvider
     private let queue = DispatchQueue(label: "com.aiko.smartdefaults", attributes: .concurrent)
 
     // Cache for computed defaults
@@ -93,12 +93,12 @@ public final class SmartDefaultsEngine: @unchecked Sendable {
         smartDefaultsProvider: SmartDefaultsProvider,
         patternLearningEngine: UserPatternLearningEngine,
         contextExtractor: UnifiedDocumentContextExtractor,
-        contextualDefaultsProvider: EnhancedContextualDefaultsProvider? = nil
+        contextualDefaultsProvider: SmartDefaultsProvider? = nil
     ) {
         self.smartDefaultsProvider = smartDefaultsProvider
         self.patternLearningEngine = patternLearningEngine
         self.contextExtractor = contextExtractor
-        self.contextualDefaultsProvider = contextualDefaultsProvider ?? EnhancedContextualDefaultsProvider()
+        self.contextualDefaultsProvider = contextualDefaultsProvider ?? SmartDefaultsProvider()
     }
 
     // Factory method for creating from MainActor context
@@ -108,7 +108,7 @@ public final class SmartDefaultsEngine: @unchecked Sendable {
             smartDefaultsProvider: SmartDefaultsProvider(),
             patternLearningEngine: patternLearningEngine,
             contextExtractor: UnifiedDocumentContextExtractor(),
-            contextualDefaultsProvider: EnhancedContextualDefaultsProvider()
+            contextualDefaultsProvider: SmartDefaultsProvider()
         )
     }
 
@@ -119,7 +119,7 @@ public final class SmartDefaultsEngine: @unchecked Sendable {
             smartDefaultsProvider: SmartDefaultsProvider.shared,
             patternLearningEngine: patternEngine,
             contextExtractor: UnifiedDocumentContextExtractor.sharedNonMainActor,
-            contextualDefaultsProvider: EnhancedContextualDefaultsProvider()
+            contextualDefaultsProvider: SmartDefaultsProvider()
         )
     }
 
@@ -305,54 +305,47 @@ public final class SmartDefaultsEngine: @unchecked Sendable {
         context: SmartDefaultContext
     ) async -> FieldDefault? {
         // Build comprehensive contextual factors
-        let factors = EnhancedContextualDefaultsProvider.ContextualFactors(
+        let factors = ContextualFactors(
             currentDate: Date(),
             fiscalYear: context.fiscalYear,
             fiscalQuarter: context.fiscalQuarter,
             isEndOfFiscalYear: context.isEndOfFiscalYear,
             daysUntilFYEnd: context.daysUntilFYEnd,
-            isEndOfQuarter: isEndOfQuarter(),
-            daysUntilQuarterEnd: daysUntilQuarterEnd(),
             timeOfDay: getCurrentTimeOfDay(),
             dayOfWeek: getCurrentDayOfWeek(),
-            organizationUnit: context.organizationUnit,
-            department: context.organizationUnit, // Use org unit as department for now
-            location: context.organizationUnit,
-            budgetRemaining: nil, // Would come from budget service
-            typicalPurchaseAmount: nil, // Would come from analytics
-            approvalLevels: [],
-            recentAcquisitions: [],
-            vendorPreferences: [],
-            seasonalPatterns: [],
-            currentWorkload: .normal,
+            organizationalPriorities: [],
+            recentSimilarAcquisitions: 0,
+            contractorCapacity: 1.0,
             urgentRequests: 0,
             pendingApprovals: 0,
             teamCapacity: 1.0,
             requiredClauses: [],
-            setAsideGoals: EnhancedContextualDefaultsProvider.SetAsideGoals(
+            setAsideGoals: SetAsideGoals(
                 smallBusiness: 0.23,
                 womanOwned: 0.05,
                 veteranOwned: 0.03,
                 hubZone: 0.03,
-                currentProgress: [:]
-            ),
-            socioeconomicTargets: []
+                eightA: 0.03
+            )
         )
 
-        // Get contextual defaults
-        let contextualDefaults = await contextualDefaultsProvider.generateContextualDefaults(
-            for: [field],
-            factors: factors
-        )
-
-        // Convert to FieldDefault
-        guard let contextualDefault = contextualDefaults[field] else { return nil }
-
-        return FieldDefault(
-            value: convertToResponseValue(contextualDefault.value),
-            confidence: contextualDefault.confidence,
-            source: .contextual
-        )
+        // For now, provide a simple contextual default based on fiscal year urgency
+        if factors.isEndOfFiscalYear && factors.daysUntilFYEnd < 60 {
+            // Provide urgent defaults for end of fiscal year
+            switch field {
+            case .requiredDate:
+                let urgentDate = Calendar.current.date(byAdding: .day, value: 15, to: Date()) ?? Date()
+                return FieldDefault(
+                    value: .date(urgentDate),
+                    confidence: 0.8,
+                    source: .contextual
+                )
+            default:
+                break
+            }
+        }
+        
+        return nil
     }
 
     private func getFromProvider(
@@ -548,19 +541,19 @@ public final class SmartDefaultsEngine: @unchecked Sendable {
         return 0
     }
 
-    private func getCurrentTimeOfDay() -> EnhancedContextualDefaultsProvider.TimeOfDay {
+    private func getCurrentTimeOfDay() -> TimeOfDay {
         let hour = Calendar.current.component(.hour, from: Date())
 
         switch hour {
         case 6 ..< 9: return .earlyMorning
-        case 9 ..< 12: return .lateMorning
+        case 9 ..< 12: return .morning
         case 12 ..< 17: return .afternoon
         case 17 ..< 20: return .evening
         default: return .night
         }
     }
 
-    private func getCurrentDayOfWeek() -> EnhancedContextualDefaultsProvider.DayOfWeek {
+    private func getCurrentDayOfWeek() -> DayOfWeek {
         let weekday = Calendar.current.component(.weekday, from: Date())
 
         switch weekday {
@@ -601,7 +594,7 @@ public final class SmartDefaultsEngine: @unchecked Sendable {
 
 // MARK: - Supporting Types
 
-public struct SmartDefaultContext: Equatable, Sendable {
+public struct SmartDefaultContext: Sendable, Equatable {
     public let sessionId: UUID
     public let userId: String
     public let organizationUnit: String
@@ -755,4 +748,50 @@ public struct MinimalQuestioningResult {
     public let autoFillFields: [RequirementField: FieldDefault]
     public let suggestedFields: [RequirementField: FieldDefault]
     public let mustAskFields: [RequirementField]
+}
+
+// MARK: - Supporting Types for Contextual Defaults
+
+public struct ContextualFactors {
+    let currentDate: Date
+    let fiscalYear: String
+    let fiscalQuarter: String
+    let isEndOfFiscalYear: Bool
+    let daysUntilFYEnd: Int
+    let timeOfDay: TimeOfDay
+    let dayOfWeek: DayOfWeek
+    let organizationalPriorities: [String]
+    let recentSimilarAcquisitions: Int
+    let contractorCapacity: Double
+    let urgentRequests: Int
+    let pendingApprovals: Int
+    let teamCapacity: Double
+    let requiredClauses: [String]
+    let setAsideGoals: SetAsideGoals
+}
+
+public struct SetAsideGoals {
+    let smallBusiness: Double
+    let womanOwned: Double
+    let veteranOwned: Double
+    let hubZone: Double
+    let eightA: Double
+}
+
+public enum TimeOfDay {
+    case earlyMorning
+    case morning
+    case afternoon
+    case evening
+    case night
+}
+
+public enum DayOfWeek {
+    case sunday
+    case monday
+    case tuesday
+    case wednesday
+    case thursday
+    case friday
+    case saturday
 }

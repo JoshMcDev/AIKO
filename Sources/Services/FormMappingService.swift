@@ -134,6 +134,7 @@ public actor FormMappingService {
 
 public enum FormMappingError: LocalizedError {
     case formNotFound(FormType)
+    case noFormsFound
     case invalidTemplateData(String)
     case mappingFailed(String)
     case validationFailed([ValidationError])
@@ -144,6 +145,8 @@ public enum FormMappingError: LocalizedError {
         switch self {
         case let .formNotFound(formType):
             "Form type \(formType.rawValue) not found"
+        case .noFormsFound:
+            "No suitable forms found for the requirements"
         case let .invalidTemplateData(reason):
             "Invalid template data: \(reason)"
         case let .mappingFailed(reason):

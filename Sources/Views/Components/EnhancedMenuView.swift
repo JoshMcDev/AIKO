@@ -39,7 +39,7 @@ struct EnhancedMenuView: View {
                     // Menu items with enhanced styling
                     ScrollView {
                         VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                            WithViewStore(store, observe: { $0 }, content: { viewStore in
+                            WithViewStore(store, observe: { $0 }) { viewStore in
                                 ForEach(AppFeature.MenuItem.allCases, id: \.self) { item in
                                     EnhancedMenuItemRow(
                                         item: item,
@@ -49,7 +49,7 @@ struct EnhancedMenuView: View {
                                             withAnimation(AnimationSystem.Spring.smooth) {
                                                 viewStore.send(.selectMenuItem(item))
                                                 isShowing = false
-        })
+                                            }
                                         }
                                     )
                                 }
