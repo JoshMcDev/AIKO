@@ -86,16 +86,16 @@ extension ScreenshotClient: DependencyKey {
 // MARK: - MediaValidationClient
 
 public struct MediaValidationClient: Sendable {
-    public var validateFile: @Sendable (URL) async throws -> ValidationResult
-    public var validateFileSize: @Sendable (Int64) -> ValidationResult
-    public var validateMimeType: @Sendable (String) -> ValidationResult
-    public var scanForMalware: @Sendable (URL) async throws -> ValidationResult
+    public var validateFile: @Sendable (URL) async throws -> MediaClientValidationResult
+    public var validateFileSize: @Sendable (Int64) -> MediaClientValidationResult
+    public var validateMimeType: @Sendable (String) -> MediaClientValidationResult
+    public var scanForMalware: @Sendable (URL) async throws -> MediaClientValidationResult
 
     public init(
-        validateFile: @escaping @Sendable (URL) async throws -> ValidationResult,
-        validateFileSize: @escaping @Sendable (Int64) -> ValidationResult,
-        validateMimeType: @escaping @Sendable (String) -> ValidationResult,
-        scanForMalware: @escaping @Sendable (URL) async throws -> ValidationResult
+        validateFile: @escaping @Sendable (URL) async throws -> MediaClientValidationResult,
+        validateFileSize: @escaping @Sendable (Int64) -> MediaClientValidationResult,
+        validateMimeType: @escaping @Sendable (String) -> MediaClientValidationResult,
+        scanForMalware: @escaping @Sendable (URL) async throws -> MediaClientValidationResult
     ) {
         self.validateFile = validateFile
         self.validateFileSize = validateFileSize
@@ -106,10 +106,10 @@ public struct MediaValidationClient: Sendable {
 
 extension MediaValidationClient: DependencyKey {
     public static let liveValue = MediaValidationClient(
-        validateFile: { _ in ValidationResult(isValid: true) },
-        validateFileSize: { _ in ValidationResult(isValid: true) },
-        validateMimeType: { _ in ValidationResult(isValid: true) },
-        scanForMalware: { _ in ValidationResult(isValid: true) }
+        validateFile: { _ in MediaClientValidationResult(isValid: true) },
+        validateFileSize: { _ in MediaClientValidationResult(isValid: true) },
+        validateMimeType: { _ in MediaClientValidationResult(isValid: true) },
+        scanForMalware: { _ in MediaClientValidationResult(isValid: true) }
     )
 }
 

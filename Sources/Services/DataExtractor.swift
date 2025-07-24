@@ -325,23 +325,21 @@ public final class DataExtractor {
             var addressLines: [String] = []
 
             for i in 1 ... 3 where index + i < lines.count {
-                        let potentialAddressLine = lines[index + i].trimmingCharacters(in: .whitespaces)
+                let potentialAddressLine = lines[index + i].trimmingCharacters(in: .whitespaces)
 
-                        // Check for address patterns
-                        if potentialAddressLine.range(of: "\\d+.*(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Way|Court|Ct|Place|Pl)",
-                                                      options: .regularExpression) != nil ||
-                            potentialAddressLine.range(of: "\\b[A-Z]{2}\\s+\\d{5}(?:-\\d{4})?\\b",
-                                                       options: .regularExpression) != nil ||
-                            potentialAddressLine.range(of: "P\\.?O\\.?\\s*Box",
-                                                       options: [.regularExpression, .caseInsensitive]) != nil {
-                            addressLines.append(potentialAddressLine)
-                        }
-                    }
+                // Check for address patterns
+                if potentialAddressLine.range(of: "\\d+.*(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Way|Court|Ct|Place|Pl)",
+                                              options: .regularExpression) != nil ||
+                    potentialAddressLine.range(of: "\\b[A-Z]{2}\\s+\\d{5}(?:-\\d{4})?\\b",
+                                               options: .regularExpression) != nil ||
+                    potentialAddressLine.range(of: "P\\.?O\\.?\\s*Box",
+                                               options: [.regularExpression, .caseInsensitive]) != nil {
+                    addressLines.append(potentialAddressLine)
                 }
+            }
 
-                if !addressLines.isEmpty {
-                    return addressLines.joined(separator: ", ")
-                }
+            if !addressLines.isEmpty {
+                return addressLines.joined(separator: ", ")
             }
         }
 

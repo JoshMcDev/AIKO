@@ -1,4 +1,4 @@
-@testable import AIKO
+@testable import AppCore
 import Foundation
 
 // Mock SAM.gov API client for testing without API key

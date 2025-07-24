@@ -276,7 +276,6 @@ extension DocumentChainManager: DependencyKey {
                             return document
                         }
                     }
-                }
 
                 return nil
             },

@@ -5,7 +5,7 @@ struct DocumentExecutionView: View {
     let store: StoreOf<DocumentExecutionFeature>
 
     var body: some View {
-        WithViewStore(store, observe: { $0 }, content: { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             SwiftUI.NavigationView {
                 ZStack {
                     Theme.Colors.aikoBackground
@@ -24,7 +24,7 @@ struct DocumentExecutionView: View {
                                     Text(category.rawValue)
                                         .font(.headline)
                                         .foregroundColor(.white.opacity(0.8))
-        })
+                                }
                             }
 
                             Spacer()

@@ -25,7 +25,7 @@ struct InformationGatheringView: View {
                                 currentIndex: viewStore.currentQuestionIndex,
                                 total: viewStore.informationQuestions.count
                             )
-        })
+                        }
 
                         // Main content
                         QuestionContentView(
@@ -39,7 +39,7 @@ struct InformationGatheringView: View {
                 .navigationBarHidden(true)
                 #endif
             }
-        }
+        })
     }
 }
 

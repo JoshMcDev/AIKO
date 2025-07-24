@@ -108,7 +108,7 @@ public struct SLAPenalty: Sendable {
     }
 }
 
-public struct SLACustomization {
+public struct SLACustomization: Sendable {
     public let availabilityTarget: Double
     public let maintenanceWindow: String
     public let responseTimeRequirements: [String: String]
@@ -130,7 +130,7 @@ public struct SLACustomization {
     }
 }
 
-public struct SLAValidation {
+public struct SLAValidation: Sendable {
     public let isValid: Bool
     public let issues: [String]
     public let suggestions: [String]
@@ -148,27 +148,94 @@ extension SLATemplateService: DependencyKey {
     public static var liveValue: SLATemplateService {
         SLATemplateService(
             loadTemplate: { industry in
+                let telecommunicationsSLATemplate = SLATemplate(
+                    industry: .telecommunications,
+                    name: "Telecommunications Service Level Agreement",
+                    description: "Comprehensive SLA for telecom services including voice, data, and network",
+                    sections: [
+                        SLASection(
+                            title: "Service Availability",
+                            content: """
+                            The Service Provider guarantees {{AVAILABILITY}} network availability measured on a monthly basis.
+
+                            Availability = (Total Minutes - Downtime Minutes) / Total Minutes × 100
+
+                            Exclusions:
+                            - Scheduled maintenance during agreed windows
+                            - Force majeure events
+                            - Customer premises equipment failures
+
+                            Measurement:
+                            - Calculated monthly from first to last day
+                            - Reported within 5 business days of month end
+                            """
+                        ),
+                        SLASection(
+                            title: "Response Times",
+                            content: """
+                            Service Provider will respond to service requests as follows:
+
+                            Priority 1 (Critical): {{P1_RESPONSE}} minutes
+                            Priority 2 (High): {{P2_RESPONSE}} hours  
+                            Priority 3 (Medium): {{P3_RESPONSE}} hours
+                            Priority 4 (Low): {{P4_RESPONSE}} business days
+
+                            Response time measured from ticket creation to first technician contact.
+                            """
+                        ),
+                        SLASection(
+                            title: "Resolution Times",
+                            content: """
+                            Target resolution times by priority:
+
+                            Priority 1: {{P1_RESOLUTION}} hours
+                            Priority 2: {{P2_RESOLUTION}} hours
+                            Priority 3: {{P3_RESOLUTION}} business days
+                            Priority 4: {{P4_RESOLUTION}} business days
+
+                            Resolution time measured from initial response to service restoration.
+                            """
+                        ),
+                        SLASection(
+                            title: "Performance Metrics",
+                            content: """
+                            Network Performance Standards:
+                            - Latency: < {{MAX_LATENCY}}ms
+                            - Packet Loss: < {{MAX_PACKET_LOSS}}%
+                            - Jitter: < {{MAX_JITTER}}ms
+                            - Throughput: ≥ {{MIN_THROUGHPUT}}% of contracted bandwidth
+
+                            Voice Quality (if applicable):
+                            - Mean Opinion Score (MOS): ≥ {{MIN_MOS}}
+                            - Post Dial Delay: < {{MAX_PDD}}ms
+                            """
+                        )
+                    ],
+                    metrics: [],
+                    penalties: []
+                )
+                
                 switch industry {
                 case .telecommunications:
-                    telecommunicationsSLATemplate
+                    return telecommunicationsSLATemplate
                 case .cloudComputing:
-                    cloudComputingSLATemplate
+                    return cloudComputingSLATemplate
                 case .dataCenter:
-                    dataCenterSLATemplate
+                    return dataCenterSLATemplate
                 case .cybersecurity:
-                    cybersecuritySLATemplate
+                    return cybersecuritySLATemplate
                 case .logistics:
-                    logisticsSLATemplate
+                    return logisticsSLATemplate
                 case .itSupport:
-                    itSupportSLATemplate
+                    return itSupportSLATemplate
                 case .softwareDevelopment:
-                    softwareDevelopmentSLATemplate
+                    return softwareDevelopmentSLATemplate
                 case .networkServices:
-                    networkServicesSLATemplate
+                    return networkServicesSLATemplate
                 case .satelliteCommunications:
-                    satelliteCommunicationsSLATemplate
+                    return satelliteCommunicationsSLATemplate
                 case .managedServices:
-                    managedServicesSLATemplate
+                    return managedServicesSLATemplate
                 }
             },
 
@@ -181,13 +248,12 @@ extension SLATemplateService: DependencyKey {
 
                 // Add sections
                 for section in template.sections where !customization.excludedSections.contains(section.title) {
-                        content += """
-                        \(section.title.uppercased())
+                    content += """
+                    \(section.title.uppercased())
 
-                        \(section.content)
+                    \(section.content)
 
-                        """
-                    }
+                    """
                 }
 
                 // Add custom metrics

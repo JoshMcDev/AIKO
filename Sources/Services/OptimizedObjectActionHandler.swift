@@ -10,7 +10,7 @@ public struct OptimizedObjectActionHandler: @unchecked Sendable {
     public var identifyObjectType: @Sendable (Any) async throws -> ObjectType
     public var getAvailableActions: @Sendable (ObjectType, ActionContext) async throws -> [ObjectAction]
     public var executeAction: @Sendable (ObjectAction) async throws -> ActionResult
-    public var validateAction: @Sendable (ObjectAction) async throws -> ObjectActionHandler.ValidationResult
+    public var validateAction: @Sendable (ObjectAction) async throws -> OptimizedObjectActionHandler.ValidationResult
     public var learnFromExecution: @Sendable (ActionResult) async throws -> Void
     public var optimizeActionPlan: @Sendable ([ObjectAction]) async throws -> [ObjectAction]
 
@@ -19,6 +19,24 @@ public struct OptimizedObjectActionHandler: @unchecked Sendable {
     public var batchExecute: @Sendable ([ObjectAction]) async throws -> [ActionResult]
     public var preloadCache: @Sendable ([ObjectAction]) async throws -> Void
     public var getPerformanceReport: @Sendable () async -> ObjectActionPerformanceReport
+}
+
+// MARK: - Supporting Types
+
+public extension OptimizedObjectActionHandler {
+    struct ValidationResult: Sendable {
+        public let isValid: Bool
+        public let errors: [String]
+        public let warnings: [String]
+        public let suggestions: [String]
+        
+        public init(isValid: Bool, errors: [String], warnings: [String], suggestions: [String]) {
+            self.isValid = isValid
+            self.errors = errors
+            self.warnings = warnings
+            self.suggestions = suggestions
+        }
+    }
 }
 
 // MARK: - Live Implementation
@@ -458,7 +476,7 @@ private func handleOptimizeActionOptimized(_ action: ObjectAction, resources _: 
 
 // MARK: - Validation
 
-private func validateActionOptimized(_ action: ObjectAction) async throws -> ObjectActionHandler.ValidationResult {
+private func validateActionOptimized(_ action: ObjectAction) async throws -> OptimizedObjectActionHandler.ValidationResult {
     var errors: [String] = []
     var warnings: [String] = []
     var suggestions: [String] = []
@@ -487,7 +505,7 @@ private func validateActionOptimized(_ action: ObjectAction) async throws -> Obj
         suggestions.append("Consider breaking this into smaller actions")
     }
 
-    return ObjectActionHandler.ValidationResult(
+    return OptimizedObjectActionHandler.ValidationResult(
         isValid: errors.isEmpty,
         errors: errors,
         warnings: warnings,
@@ -511,7 +529,7 @@ private actor ObjectTypeCache {
 
 private actor ValidationCache {
     private var actionCache: [String: [ObjectAction]] = [:]
-    private var validationCache: [ValidationCacheKey: ObjectActionHandler.ValidationResult] = [:]
+    private var validationCache: [ValidationCacheKey: OptimizedObjectActionHandler.ValidationResult] = [:]
 
     func getActions(_ key: String) -> [ObjectAction]? {
         actionCache[key]
@@ -521,11 +539,11 @@ private actor ValidationCache {
         actionCache[key] = actions
     }
 
-    func get(_ key: ValidationCacheKey) -> ObjectActionHandler.ValidationResult? {
+    func get(_ key: ValidationCacheKey) -> OptimizedObjectActionHandler.ValidationResult? {
         validationCache[key]
     }
 
-    func set(_ key: ValidationCacheKey, result: ObjectActionHandler.ValidationResult) {
+    func set(_ key: ValidationCacheKey, result: OptimizedObjectActionHandler.ValidationResult) {
         validationCache[key] = result
     }
 }

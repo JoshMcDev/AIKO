@@ -145,7 +145,7 @@ struct SAMGovLookupView: View {
                             .padding(.horizontal)
                             .padding(.top)
 
-                        ForEach(searchResults, id: \.legalBusinessName) { result in
+                        ForEach(searchResults, id: \.entityName) { result in
                             EntityDetailView(entity: result)
                                 .padding()
                         }
@@ -224,7 +224,7 @@ struct SAMGovLookupView: View {
                     searchEntries[index].isSearching = false
                     searchEntries[index].result = result
                     if let result {
-                        if !searchResults.contains(where: { $0.legalBusinessName == result.legalBusinessName }) {
+                        if !searchResults.contains(where: { $0.entityName == result.entityName }) {
                             searchResults.append(result)
                         }
                     }
@@ -337,7 +337,7 @@ struct SearchEntryView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
                             .font(.caption)
-                        Text("Found: \(result.legalBusinessName)")
+                        Text("Found: \(result.entityName)")
                             .font(.caption)
                             .foregroundColor(.green)
                             .lineLimit(1)
@@ -458,12 +458,12 @@ struct EntityDetailView: View {
                         .font(.headline)
                         .padding(.bottom, 4)
 
-                    ForEach(entity.businessTypes, id: \.code) { type in
+                    ForEach(entity.businessTypes, id: \.self) { type in
                         HStack {
                             Image(systemName: "checkmark.circle")
                                 .foregroundColor(.green)
                                 .font(.caption)
-                            Text(type.description)
+                            Text(type)
                                 .font(.caption)
                         }
                     }

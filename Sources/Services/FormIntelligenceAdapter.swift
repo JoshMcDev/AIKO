@@ -531,20 +531,19 @@ extension FormIntelligenceAdapter: DependencyKey {
 
                 // Add any system-generated insights
                 for learning in processingResult.learningsGenerated where learning.type == .automationOpportunity {
-                        insights.append(FormInsight(
-                            id: UUID(),
-                            formType: "general",
-                            insightType: .automationOpportunity,
-                            title: "Automation Opportunity Detected",
-                            description: learning.recommendation.action,
-                            impact: learning.confidence > 0.8 ? .high : .medium,
-                            recommendations: [learning.recommendation.action],
-                            dataPoints: [
-                                .init(label: "Confidence", value: learning.confidence * 100, unit: "%"),
-                                .init(label: "Impact", value: learning.recommendation.impact == .high ? 100 : learning.recommendation.impact == .medium ? 50 : 25, unit: "score"),
-                            ]
-                        ))
-                    }
+                    insights.append(FormInsight(
+                        id: UUID(),
+                        formType: "general",
+                        insightType: .automationOpportunity,
+                        title: "Automation Opportunity Detected",
+                        description: learning.recommendation.action,
+                        impact: learning.confidence > 0.8 ? .high : .medium,
+                        recommendations: [learning.recommendation.action],
+                        dataPoints: [
+                            .init(label: "Confidence", value: learning.confidence * 100, unit: "%"),
+                            .init(label: "Impact", value: learning.recommendation.impact == .high ? 100 : learning.recommendation.impact == .medium ? 50 : 25, unit: "score"),
+                        ]
+                    ))
                 }
 
                 return insights

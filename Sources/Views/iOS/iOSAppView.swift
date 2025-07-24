@@ -55,7 +55,7 @@
                 )) {
                     ShareSheetView(items: viewStore.shareItems)
                 }
-            }
+            })
         }
     }
 

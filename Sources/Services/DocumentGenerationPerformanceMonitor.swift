@@ -234,13 +234,12 @@ public actor DocumentGenerationPerformanceMonitor {
 
         // Check for slow document types
         for (type, performance) in report.typeMetrics where performance.averageGenerationTime > targetGenerationTime * 1.5 {
-                suggestions.append(OptimizationSuggestion(
-                    category: .documentType,
-                    priority: .medium,
-                    description: "\(type) documents are slow (\(String(format: "%.2fs", performance.averageGenerationTime)) average)",
-                    recommendation: "Consider optimizing template or system prompt for \(type)"
-                ))
-            }
+            suggestions.append(OptimizationSuggestion(
+                category: .documentType,
+                priority: .medium,
+                description: "\(type) documents are slow (\(String(format: "%.2fs", performance.averageGenerationTime)) average)",
+                recommendation: "Consider optimizing template or system prompt for \(type)"
+            ))
         }
 
         return suggestions

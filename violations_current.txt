@@ -1,5 +1,0 @@
-/Users/J/aiko/Tests/Services/DocumentParserEnhancedTests.swift:7:25: warning: Implicitly Unwrapped Optional Violation: Implicitly unwrapped optionals should be avoided when possible (implicitly_unwrapped_optional)
-/Users/J/aiko/Tests/Services/UserPatternLearningEngineTests.swift:5:14: warning: Implicitly Unwrapped Optional Violation: Implicitly unwrapped optionals should be avoided when possible (implicitly_unwrapped_optional)
-/Users/J/aiko/Tests/AppCoreTests/MediaManagement/MediaManagementFeatureTests.swift:9:16: warning: Implicitly Unwrapped Optional Violation: Implicitly unwrapped optionals should be avoided when possible (implicitly_unwrapped_optional)
-/Users/J/aiko/Tests/Integration/Scanner/DocumentProcessorIntegrationTests.swift:14:28: warning: Implicitly Unwrapped Optional Violation: Implicitly unwrapped optionals should be avoided when possible (implicitly_unwrapped_optional)
-/Users/J/aiko/Tests/AIKOiOSTests/MediaManagement/MediaManagementUITests.swift:11:16: warning: Implicitly Unwrapped Optional Violation: Implicitly unwrapped optionals should be avoided when possible (implicitly_unwrapped_optional)

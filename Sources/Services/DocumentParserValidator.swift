@@ -12,7 +12,7 @@ public final class DocumentParserValidator {
     private static let maxTextLength = 5_000_000 // 5 million characters
 
     // Supported document types
-    private static let supportedTypes: Set<String> = [
+    fileprivate static let supportedTypes: Set<String> = [
         UniformTypeIdentifiers.UTType.pdf.identifier,
         UniformTypeIdentifiers.UTType.rtf.identifier,
         UniformTypeIdentifiers.UTType.plainText.identifier,
@@ -171,7 +171,7 @@ public final class DocumentParserValidator {
 
     private func isSupportedType(_ type: UniformTypeIdentifiers.UTType) -> Bool {
         // Check direct identifier match
-        if Self.supportedTypes.contains(type.identifier) {
+        if DocumentParserValidator.supportedTypes.contains(type.identifier) {
             return true
         }
 
@@ -363,7 +363,6 @@ public final class DocumentParserValidator {
             )
         }
     }
-}
 
 // MARK: - Validation Result Type
 

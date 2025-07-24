@@ -17,7 +17,7 @@ public struct AcquisitionsListView: View {
                 .applyNavigationConfiguration()
                 .onAppear {
                     viewStore.send(.onAppear)
-        })
+                }
                 .alert(
                     "Error",
                     isPresented: errorBinding(viewStore: viewStore),
@@ -27,7 +27,7 @@ public struct AcquisitionsListView: View {
                 } message: { error in
                     Text(error)
                 }
-        }
+        })
     }
 
     // MARK: - Private Helper Views

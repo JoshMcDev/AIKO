@@ -143,6 +143,11 @@ actor MemoryCache: OfflineCacheProtocol {
             logger.debug("Removed \(expiredKeys.count) expired entries")
         }
     }
+    
+    /// Remove expired memory entries (alias)
+    func removeExpiredMemoryEntries() async {
+        await removeExpiredEntries()
+    }
 
     /// Make space for new data
     private func makeSpace(for requiredSize: Int64) async throws {
@@ -216,5 +221,56 @@ actor MemoryCache: OfflineCacheProtocol {
             freedSpace += entry.size
             currentSize -= entry.size
         }
+    }
+    
+    /// Get metadata for a key
+    func getMetadata(forKey key: String) async -> OfflineCacheMetadata? {
+        guard let entry = storage[key], !entry.isExpired else { return nil }
+        
+        return OfflineCacheMetadata(
+            key: key,
+            size: entry.size,
+            contentType: entry.contentType,
+            createdAt: entry.createdAt,
+            lastAccessed: entry.lastAccessedAt,
+            accessCount: entry.accessCount,
+            expiresAt: entry.expiresAt
+        )
+    }
+    
+    /// Check cache health
+    func checkHealth() async -> CacheHealthStatus {
+        let totalEntries = storage.count
+        let _ = storage.values.filter { $0.isExpired }.count
+        
+        return CacheHealthStatus(
+            level: .healthy,
+            totalSize: currentSize,
+            maxSize: configuration.maxSize,
+            entryCount: totalEntries,
+            hitRate: 0.0, // Calculate if needed
+            lastCleanup: Date(),
+            issues: []
+        )
+    }
+    
+    /// Export all data
+    func exportAllData() async -> SendableExportData {
+        var exportData: SendableExportData = [:]
+        
+        for (key, entry) in storage {
+            if !entry.isExpired {
+                exportData[key] = [
+                    "data": entry.data.base64EncodedString(),
+                    "createdAt": entry.createdAt.timeIntervalSince1970,
+                    "lastAccessedAt": entry.lastAccessedAt.timeIntervalSince1970,
+                    "expiresAt": entry.expiresAt?.timeIntervalSince1970 ?? 0,
+                    "accessCount": entry.accessCount,
+                    "size": entry.size
+                ]
+            }
+        }
+        
+        return exportData
     }
 }

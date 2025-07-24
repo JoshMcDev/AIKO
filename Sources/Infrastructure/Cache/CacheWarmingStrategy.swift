@@ -6,7 +6,7 @@ public actor CacheWarmingStrategy {
     // MARK: - Properties
 
     private let cache: ObjectActionCache
-    private let objectActionHandler: ObjectActionHandler
+    private let objectActionHandler: OptimizedObjectActionHandler
     private var warmingTasks: [String: Task<Void, Never>] = [:]
     private var warmingMetrics = WarmingMetrics()
 
@@ -88,7 +88,7 @@ public actor CacheWarmingStrategy {
 
     public init(
         cache: ObjectActionCache,
-        objectActionHandler: ObjectActionHandler,
+        objectActionHandler: OptimizedObjectActionHandler,
         configuration: WarmingConfiguration = .init()
     ) {
         self.cache = cache
@@ -629,7 +629,7 @@ extension ObjectActionCache {
 extension CacheWarmingStrategy: DependencyKey {
     public static var liveValue: CacheWarmingStrategy {
         @Dependency(\.objectActionCache) var cache
-        @Dependency(\.objectActionHandler) var handler
+        @Dependency(\.optimizedObjectActionHandler) var handler
 
         return CacheWarmingStrategy(
             cache: cache,

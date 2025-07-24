@@ -1,264 +1,216 @@
-import CryptoKit
 import Foundation
+import CommonCrypto
 
-/// Consistent hashing implementation for distributed cache
+/// Consistent hashing implementation for distributed cache node selection
 public actor ConsistentHash {
     // MARK: - Properties
-
-    private let virtualNodes: Int
+    
     private var ring: [UInt32: String] = [:]
-    private var sortedKeys: [UInt32] = []
-    private var nodeMap: [String: Set<UInt32>] = [:]
-
+    private var sortedHashes: [UInt32] = []
+    private let virtualNodes: Int
+    private let lock = NSLock()
+    
     // MARK: - Initialization
-
+    
     public init(virtualNodes: Int = 150) {
         self.virtualNodes = virtualNodes
     }
-
+    
     // MARK: - Public Methods
-
-    /// Add a node to the hash ring
+    
+    /// Add a node to the consistent hash ring
     public func addNode(_ nodeId: String) {
-        var positions = Set<UInt32>()
-
-        for i in 0 ..< virtualNodes {
-            let virtualKey = "\(nodeId):\(i)"
-            let hash = hashValue(virtualKey)
+        lock.lock()
+        defer { lock.unlock() }
+        
+        // Add virtual nodes for better distribution
+        for i in 0..<virtualNodes {
+            let virtualNodeId = "\(nodeId):\(i)"
+            let hash = calculateHash(virtualNodeId)
             ring[hash] = nodeId
-            positions.insert(hash)
         }
-
-        nodeMap[nodeId] = positions
-        updateSortedKeys()
+        
+        updateSortedHashes()
     }
-
-    /// Remove a node from the hash ring
+    
+    /// Remove a node from the consistent hash ring
     public func removeNode(_ nodeId: String) {
-        guard let positions = nodeMap[nodeId] else { return }
-
-        for position in positions {
-            ring.removeValue(forKey: position)
+        lock.lock()
+        defer { lock.unlock() }
+        
+        // Remove all virtual nodes for this node
+        for i in 0..<virtualNodes {
+            let virtualNodeId = "\(nodeId):\(i)"
+            let hash = calculateHash(virtualNodeId)
+            ring.removeValue(forKey: hash)
         }
-
-        nodeMap.removeValue(forKey: nodeId)
-        updateSortedKeys()
+        
+        updateSortedHashes()
     }
-
+    
     /// Get the node responsible for a given key
-    public func getNode(for key: String) -> String {
-        guard !ring.isEmpty else {
-            fatalError("No nodes available in consistent hash ring")
-        }
-
-        let hash = hashValue(key)
-
-        // Find the first node with hash >= key hash
-        let index = findInsertionPoint(hash)
-
-        // Wrap around if necessary
-        let position = index < sortedKeys.count ? sortedKeys[index] : sortedKeys[0]
-
-        guard let node = ring[position] else {
-<<<<<<< HEAD
-            // This should never happen if the ring is properly maintained
-            fatalError("Ring inconsistency detected: position \(position) not found")
-=======
-            fatalError("Inconsistent hash ring state: position not found")
->>>>>>> Main
-        }
-        return node
-    }
-
-    /// Get replica nodes for a key
-    public func getReplicaNodes(for key: String, count: Int) -> [String] {
-        guard !ring.isEmpty else { return [] }
-
-        let hash = hashValue(key)
-        var replicas: [String] = []
-        var seenNodes = Set<String>()
-
-        // Start from the primary node position
-        var index = findInsertionPoint(hash)
-
-        // Find unique nodes
-        while replicas.count < count, seenNodes.count < nodeMap.count {
-            let position = sortedKeys[index % sortedKeys.count]
-            guard let nodeId = ring[position] else {
-<<<<<<< HEAD
-                index += 1
-                continue // Skip invalid positions
-=======
-                fatalError("Inconsistent hash ring state: position not found in replica lookup")
->>>>>>> Main
+    public func getNode(for key: String) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        guard !sortedHashes.isEmpty else { return nil }
+        
+        let keyHash = calculateHash(key)
+        
+        // Find the first node with hash >= keyHash
+        for hash in sortedHashes {
+            if hash >= keyHash {
+                return ring[hash]
             }
-
-            if !seenNodes.contains(nodeId) {
-                seenNodes.insert(nodeId)
-                if !replicas.isEmpty || nodeId != getNode(for: key) {
-                    replicas.append(nodeId)
+        }
+        
+        // Wrap around to the first node
+        return ring[sortedHashes.first!]
+    }
+    
+    /// Get multiple nodes for replication
+    public func getNodes(for key: String, count: Int) -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        guard !sortedHashes.isEmpty else { return [] }
+        
+        let keyHash = calculateHash(key)
+        var result: [String] = []
+        var uniqueNodes = Set<String>()
+        
+        // Find starting position
+        var startIndex = 0
+        for (index, hash) in sortedHashes.enumerated() {
+            if hash >= keyHash {
+                startIndex = index
+                break
+            }
+        }
+        
+        // Collect unique nodes starting from the calculated position
+        var currentIndex = startIndex
+        while uniqueNodes.count < count && uniqueNodes.count < Set(ring.values).count {
+            let hash = sortedHashes[currentIndex]
+            if let nodeId = ring[hash] {
+                if uniqueNodes.insert(nodeId).inserted {
+                    result.append(nodeId)
                 }
             }
-
-            index += 1
+            
+            currentIndex = (currentIndex + 1) % sortedHashes.count
+            
+            // Prevent infinite loop if we've checked all positions
+            if currentIndex == startIndex && uniqueNodes.count < count {
+                break
+            }
         }
-
-        return replicas
+        
+        return result
     }
-
+    
     /// Get all nodes in the ring
     public func getAllNodes() -> [String] {
-        Array(nodeMap.keys)
+        lock.lock()
+        defer { lock.unlock() }
+        
+        return Array(Set(ring.values))
     }
-
-    /// Get the number of nodes
-    public func nodeCount() -> Int {
-        nodeMap.count
-    }
-
-    /// Check if a node exists
-    public func hasNode(_ nodeId: String) -> Bool {
-        nodeMap[nodeId] != nil
-    }
-
-    /// Get keys that would be affected by removing a node
-    public func getAffectedKeys(for nodeId: String, from keys: [String]) -> [String] {
-        guard hasNode(nodeId) else { return [] }
-
-        // Temporarily remove the node
-<<<<<<< HEAD
-        guard let positions = nodeMap[nodeId] else {
-            return [] // Node not found
+    
+    /// Get the load distribution across nodes
+    public func getLoadDistribution() -> [String: Int] {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        var distribution: [String: Int] = [:]
+        
+        for nodeId in ring.values {
+            distribution[nodeId, default: 0] += 1
         }
-=======
-        guard let positions = nodeMap[nodeId] else { return [] }
->>>>>>> Main
-        for position in positions {
-            ring.removeValue(forKey: position)
-        }
-        updateSortedKeys()
-
-        // Find keys that would move to a different node
+        
+        return distribution
+    }
+    
+    /// Get replica nodes for a key (excluding primary)
+    public func getReplicaNodes(for key: String, count: Int) -> [String] {
+        let allNodes = getNodes(for: key, count: count + 1) // +1 to include primary
+        return Array(allNodes.dropFirst()) // Remove primary, return only replicas
+    }
+    
+    /// Get keys that would be affected by node removal (for migration planning)
+    public func getAffectedKeys(for nodeId: String, from keySet: Set<String>) -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        
         var affectedKeys: [String] = []
-        for key in keys {
-            let newNode = getNode(for: key)
-
-            // Re-add the node temporarily to check original assignment
-            for position in positions {
-                ring[position] = nodeId
-            }
-            updateSortedKeys()
-
-            let originalNode = getNode(for: key)
-
-            // Remove again for next iteration
-            for position in positions {
-                ring.removeValue(forKey: position)
-            }
-            updateSortedKeys()
-
-            if originalNode == nodeId, newNode != nodeId {
+        
+        for key in keySet {
+            if let currentNode = getNode(for: key), currentNode == nodeId {
                 affectedKeys.append(key)
             }
         }
-
-        // Restore the node
-        for position in positions {
-            ring[position] = nodeId
-        }
-        updateSortedKeys()
-
+        
         return affectedKeys
     }
-
-    /// Get load distribution statistics
-    public func getLoadDistribution(keyCount: Int = 10000) -> [String: Double] {
-        var distribution: [String: Int] = [:]
-
-        // Initialize counters
-        for nodeId in nodeMap.keys {
-            distribution[nodeId] = 0
-        }
-
-        // Simulate key distribution
-        for i in 0 ..< keyCount {
-            let key = "test-key-\(i)"
-            let nodeId = getNode(for: key)
-            distribution[nodeId, default: 0] += 1
-        }
-
-        // Convert to percentages
-        var percentages: [String: Double] = [:]
-        for (nodeId, count) in distribution {
-            percentages[nodeId] = Double(count) / Double(keyCount) * 100
-        }
-
-        return percentages
-    }
-
+    
     // MARK: - Private Methods
-
-    private func hashValue(_ key: String) -> UInt32 {
-        let data = Data(key.utf8)
-        let hash = SHA256.hash(data: data)
-
-        // Take first 4 bytes and convert to UInt32
-        let bytes = Array(hash.makeIterator().prefix(4))
-        let value = bytes.withUnsafeBytes { $0.load(as: UInt32.self) }
-
-        return value
+    
+    private func updateSortedHashes() {
+        sortedHashes = Array(ring.keys).sorted()
     }
-
-    private func updateSortedKeys() {
-        sortedKeys = ring.keys.sorted()
-    }
-
-    private func findInsertionPoint(_ hash: UInt32) -> Int {
-        var left = 0
-        var right = sortedKeys.count
-
-        while left < right {
-            let mid = (left + right) / 2
-            if sortedKeys[mid] < hash {
-                left = mid + 1
-            } else {
-                right = mid
-            }
+    
+    private func calculateHash(_ input: String) -> UInt32 {
+        // Use SHA-1 hash for consistent distribution
+        let data = input.data(using: .utf8) ?? Data()
+        var digest = [UInt8](repeating: 0, count: Int(CC_SHA1_DIGEST_LENGTH))
+        
+        _ = data.withUnsafeBytes { bytes in
+            CC_SHA1(bytes.bindMemory(to: UInt8.self).baseAddress, CC_LONG(data.count), &digest)
         }
-
-        return left
+        
+        // Use first 4 bytes as UInt32
+        return digest.withUnsafeBytes { bytes in
+            bytes.load(as: UInt32.self)
+        }
     }
 }
 
-// MARK: - Testing Support
+// MARK: - Hash Ring Statistics
 
-#if DEBUG
-    public extension ConsistentHash {
-        /// Visualize the hash ring distribution
-        func visualizeRing() -> String {
-            var output = "Consistent Hash Ring:\n"
-            output += "Total Nodes: \(nodeMap.count)\n"
-            output += "Virtual Nodes per Node: \(virtualNodes)\n"
-            output += "Total Positions: \(ring.count)\n\n"
-
-            // Show first 10 positions
-            let positions = sortedKeys.prefix(10)
-            for position in positions {
-<<<<<<< HEAD
-                guard let nodeId = ring[position] else {
-                    continue // Skip invalid positions
-                }
-=======
-                guard let nodeId = ring[position] else { continue }
->>>>>>> Main
-                output += String(format: "Position %010u -> Node: %@\n", position, nodeId)
-            }
-
-            if sortedKeys.count > 10 {
-                output += "... (\(sortedKeys.count - 10) more positions)\n"
-            }
-
-            return output
+public extension ConsistentHash {
+    struct RingStatistics {
+        public let totalNodes: Int
+        public let totalVirtualNodes: Int
+        public let loadBalance: Double // Standard deviation of load distribution
+        public let distribution: [String: Int]
+        
+        init(totalNodes: Int, totalVirtualNodes: Int, loadBalance: Double, distribution: [String: Int]) {
+            self.totalNodes = totalNodes
+            self.totalVirtualNodes = totalVirtualNodes
+            self.loadBalance = loadBalance
+            self.distribution = distribution
         }
     }
-#endif
+    
+    func getStatistics() -> RingStatistics {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        let distribution = getLoadDistribution()
+        let totalNodes = distribution.count
+        let totalVirtualNodes = ring.count
+        
+        // Calculate load balance (lower is better)
+        let values = Array(distribution.values).map { Double($0) }
+        let mean = values.reduce(0, +) / Double(values.count)
+        let variance = values.map { pow($0 - mean, 2) }.reduce(0, +) / Double(values.count)
+        let standardDeviation = sqrt(variance)
+        
+        return RingStatistics(
+            totalNodes: totalNodes,
+            totalVirtualNodes: totalVirtualNodes,
+            loadBalance: standardDeviation,
+            distribution: distribution
+        )
+    }
+}

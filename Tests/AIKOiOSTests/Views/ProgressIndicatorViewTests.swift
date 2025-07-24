@@ -1,5 +1,9 @@
-@testable import AIKOiOS
 @testable import AppCore
+@testable import AIKOiOS
+@testable import AIKOiOSiOS
+@testable import AppCore
+@testable import AIKOiOS
+@testable import AIKOiOS
 import SnapshotTesting
 import SwiftUI
 import XCTest

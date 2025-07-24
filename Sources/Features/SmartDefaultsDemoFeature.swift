@@ -8,29 +8,13 @@ struct SmartDefaultsDemoFeature {
     @ObservableState
     struct State: Equatable {
         var isLoading = false
-        var context: SmartDefaultContext
-        var formFields: [SmartDefaultField] = []
-        var metrics: SmartDefaultsMetrics
         var showingLearningDetails = false
+        var context = SmartDefaultContext()
+        var formFields: [SmartDefaultField] = []
+        var metrics = SmartDefaultsMetrics()
 
         init() {
-            // Initialize with sample context
-            context = SmartDefaultContext(
-                sessionId: UUID(),
-                userId: "john.doe@agency.gov",
-                organizationUnit: "Contracting Division",
-                acquisitionType: .commercialItem,
-                documentType: .requestForQuote,
-                extractedData: [:],
-                organizationalRules: [],
-                fiscalYear: "FY2025",
-                fiscalQuarter: "Q2",
-                isEndOfFiscalYear: false,
-                daysUntilFYEnd: 180,
-                autoFillThreshold: 0.8
-            )
-
-            metrics = SmartDefaultsMetrics()
+            // Empty init
         }
     }
 

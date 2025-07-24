@@ -1,6 +1,37 @@
 import ComposableArchitecture
 import Foundation
 
+// MARK: - Configuration Types
+
+/// Configuration for processing individual pages in batch operations
+private struct PageProcessingConfig: Sendable {
+    let page: SessionPage
+    let index: Int
+    let total: Int
+    let sessionEngine: SessionEngine
+    let progressSession: String
+    let progressHandler: @Sendable (Double) async -> Void
+    let perPageCompletion: @Sendable (SessionPage.ID, Result<Void, Error>) async -> Void
+    
+    init(
+        page: SessionPage,
+        index: Int,
+        total: Int,
+        sessionEngine: SessionEngine,
+        progressSession: String,
+        progressHandler: @escaping @Sendable (Double) async -> Void,
+        perPageCompletion: @escaping @Sendable (SessionPage.ID, Result<Void, Error>) async -> Void
+    ) {
+        self.page = page
+        self.index = index
+        self.total = total
+        self.sessionEngine = sessionEngine
+        self.progressSession = progressSession
+        self.progressHandler = progressHandler
+        self.perPageCompletion = perPageCompletion
+    }
+}
+
 /// Protocol for batch processing of session pages
 public protocol BatchProcessing: Sendable {
     /// Process pages in batch with progress tracking
@@ -84,7 +115,7 @@ public actor BatchProcessor: BatchProcessing {
                             index: currentIndex,
                             total: total,
                             sessionEngine: sessionEngine,
-                            progressSession: progressSession,
+                            progressSession: sessionId.uuidString,
                             progressHandler: progressHandler,
                             perPageCompletion: perPageCompletion
                         )
@@ -104,7 +135,7 @@ public actor BatchProcessor: BatchProcessing {
                             index: currentIndex,
                             total: total,
                             sessionEngine: sessionEngine,
-                            progressSession: progressSession,
+                            progressSession: sessionId.uuidString,
                             progressHandler: progressHandler,
                             perPageCompletion: perPageCompletion
                         )
@@ -256,40 +287,4 @@ public extension DependencyValues {
 
 // MARK: - Batch Operation Status
 
-/// Status of a batch operation for UI display
-public struct BatchOperationStatus: Equatable, Sendable {
-    public let isRunning: Bool
-    public let progress: Double
-    public let completedCount: Int
-    public let totalCount: Int
-    public let currentOperation: String?
-    public let error: String?
-
-    public init(
-        isRunning: Bool = false,
-        progress: Double = 0.0,
-        completedCount: Int = 0,
-        totalCount: Int = 0,
-        currentOperation: String? = nil,
-        error: String? = nil
-    ) {
-        self.isRunning = isRunning
-        self.progress = progress
-        self.completedCount = completedCount
-        self.totalCount = totalCount
-        self.currentOperation = currentOperation
-        self.error = error
-    }
-
-    public var remainingCount: Int {
-        max(0, totalCount - completedCount)
-    }
-
-    public var isCompleted: Bool {
-        completedCount >= totalCount && totalCount > 0
-    }
-
-    public var progressPercentage: Int {
-        Int(progress * 100)
-    }
-}
+// Note: BatchOperationStatus is defined in BatchOperations.swift

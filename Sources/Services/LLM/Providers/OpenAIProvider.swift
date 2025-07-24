@@ -322,30 +322,29 @@ public final class OpenAIProvider: LLMProviderProtocol, @unchecked Sendable {
 
                     // Process SSE stream
                     for try await line in bytes.lines where line.hasPrefix("data: ") {
-                            let jsonString = String(line.dropFirst(6))
-                            if jsonString == "[DONE]" {
-                                continuation.finish()
-                                break
+                        let jsonString = String(line.dropFirst(6))
+                        if jsonString == "[DONE]" {
+                            continuation.finish()
+                            break
+                        }
+
+                        if let data = jsonString.data(using: .utf8),
+                           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                           let choices = json["choices"] as? [[String: Any]],
+                           let firstChoice = choices.first,
+                           let delta = firstChoice["delta"] as? [String: Any] {
+                            if let content = delta["content"] as? String {
+                                continuation.yield(LLMStreamChunk(delta: content))
                             }
 
-                            if let data = jsonString.data(using: .utf8),
-                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                               let choices = json["choices"] as? [[String: Any]],
-                               let firstChoice = choices.first,
-                               let delta = firstChoice["delta"] as? [String: Any] {
-                                if let content = delta["content"] as? String {
-                                    continuation.yield(LLMStreamChunk(delta: content))
+                            if let finishReason = firstChoice["finish_reason"] as? String {
+                                let reason: FinishReason = switch finishReason {
+                                case "length": .length
+                                case "function_call": .functionCall
+                                case "content_filter": .contentFilter
+                                default: .stop
                                 }
-
-                                if let finishReason = firstChoice["finish_reason"] as? String {
-                                    let reason: FinishReason = switch finishReason {
-                                    case "length": .length
-                                    case "function_call": .functionCall
-                                    case "content_filter": .contentFilter
-                                    default: .stop
-                                    }
-                                    continuation.yield(LLMStreamChunk(delta: "", finishReason: reason))
-                                }
+                                continuation.yield(LLMStreamChunk(delta: "", finishReason: reason))
                             }
                         }
                     }

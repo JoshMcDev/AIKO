@@ -1,9 +1,9 @@
 import AppCore
 import Foundation
 
-// MARK: - Google Gemini Provider
+// MARK: - Gemini Provider
 
-/// Google Gemini API provider implementation
+/// Google Gemini AI provider implementation
 public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
     // MARK: - Properties
 
@@ -17,54 +17,42 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
             supportsVision: true,
             supportsFunctionCalling: true,
             maxTokens: 8192,
-            maxContextLength: 1_048_576, // 1M tokens for Gemini 1.5 Pro
+            maxContextLength: 1_000_000,
             supportedModels: [
+                LLMModel(
+                    id: "gemini-2.0-flash-exp",
+                    name: "Gemini 2.0 Flash",
+                    description: "Latest Gemini 2.0 Flash model",
+                    contextLength: 1_000_000,
+                    pricing: ModelPricing(
+                        inputPricePerMillion: 0.075,
+                        outputPricePerMillion: 0.30
+                    )
+                ),
                 LLMModel(
                     id: "gemini-1.5-pro",
                     name: "Gemini 1.5 Pro",
-                    description: "Most capable model with 1M token context",
-                    contextLength: 1_048_576,
+                    description: "Advanced reasoning and complex tasks",
+                    contextLength: 2_000_000,
                     pricing: ModelPricing(
-                        inputPricePerMillion: 3.5,
-                        outputPricePerMillion: 10.5
+                        inputPricePerMillion: 1.25,
+                        outputPricePerMillion: 5.00
                     )
                 ),
                 LLMModel(
                     id: "gemini-1.5-flash",
                     name: "Gemini 1.5 Flash",
-                    description: "Fast and efficient with 1M token context",
-                    contextLength: 1_048_576,
+                    description: "Fast and efficient model",
+                    contextLength: 1_000_000,
                     pricing: ModelPricing(
-                        inputPricePerMillion: 0.35,
-                        outputPricePerMillion: 1.05
-                    )
-                ),
-                LLMModel(
-                    id: "gemini-pro",
-                    name: "Gemini Pro",
-                    description: "Balanced performance model",
-                    contextLength: 32768,
-                    pricing: ModelPricing(
-                        inputPricePerMillion: 0.5,
-                        outputPricePerMillion: 1.5
-                    )
-                ),
-                LLMModel(
-                    id: "gemini-pro-vision",
-                    name: "Gemini Pro Vision",
-                    description: "Multimodal model for text and images",
-                    contextLength: 32768,
-                    pricing: ModelPricing(
-                        inputPricePerMillion: 0.5,
-                        outputPricePerMillion: 1.5
+                        inputPricePerMillion: 0.075,
+                        outputPricePerMillion: 0.30
                     )
                 ),
             ]
         )
     }
 
-    private let baseURL = "https://generativelanguage.googleapis.com/v1beta"
-    private var apiKey: String?
     private let session: URLSession
 
     // MARK: - Initialization
@@ -85,14 +73,14 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
     }
 
     public func validateCredentials() async throws -> Bool {
-        guard try await LLMConfigurationManager.shared.loadConfiguration(for: id) != nil else {
+        guard let config = try await LLMConfigurationManager.shared.loadConfiguration(for: id) else {
             throw LLMProviderError.notConfigured
         }
 
         // Test API key with a simple request
         let testRequest = LLMChatRequest(
             messages: [LLMMessage(role: .user, content: "Hi")],
-            model: "gemini-pro",
+            model: "gemini-1.5-flash",
             maxTokens: 10
         )
 
@@ -112,21 +100,23 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
             throw LLMProviderError.notConfigured
         }
 
-        // Convert messages to Gemini format
+        // Build messages for Gemini format
         var contents: [[String: Any]] = []
 
-        // Add system instruction if provided
-        var systemInstruction: String?
+        // Add system message if provided
         if let systemPrompt = request.systemPrompt {
-            systemInstruction = systemPrompt
+            contents.append([
+                "role": "user",
+                "parts": [["text": "System: \(systemPrompt)"]]
+            ])
         }
 
-        // Convert messages to Gemini format
+        // Add conversation messages
         for message in request.messages {
             let role = message.role == .assistant ? "model" : "user"
             contents.append([
                 "role": role,
-                "parts": [["text": message.content]],
+                "parts": [["text": message.content]]
             ])
         }
 
@@ -135,20 +125,18 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
             "contents": contents,
             "generationConfig": [
                 "temperature": request.temperature,
-                "maxOutputTokens": request.maxTokens ?? 8192,
-            ],
+                "maxOutputTokens": request.maxTokens ?? 8192
+            ]
         ]
 
-        if let systemInstruction {
-            body["systemInstruction"] = ["parts": [["text": systemInstruction]]]
-        }
+        // Gemini API endpoint
+        let url = "https://generativelanguage.googleapis.com/v1beta/models/\(request.model):generateContent?key=\(config.apiKey)"
 
         // Make API request
-        let endpoint = "\(baseURL)/models/\(request.model):generateContent?key=\(config.apiKey ?? "")"
-        guard let url = URL(string: endpoint) else {
+        guard let urlObject = URL(string: url) else {
             throw LLMProviderError.networkError("Invalid URL")
         }
-        var urlRequest = URLRequest(url: url)
+        var urlRequest = URLRequest(url: urlObject)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -189,13 +177,20 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
             throw LLMProviderError.invalidResponse("Missing required fields")
         }
 
-        // Extract usage metadata if available
-        let usageMetadata = json["usageMetadata"] as? [String: Any]
-        let promptTokens = usageMetadata?["promptTokenCount"] as? Int ?? 0
-        let candidateTokens = usageMetadata?["candidatesTokenCount"] as? Int ?? 0
+        let responseMessage = LLMMessage(
+            role: .assistant,
+            content: text
+        )
 
-        let message = LLMMessage(role: .assistant, content: text)
-        let tokenUsage = TokenUsage(promptTokens: promptTokens, completionTokens: candidateTokens)
+        // Extract usage metadata if available
+        let usage = json["usageMetadata"] as? [String: Any]
+        let promptTokens = usage?["promptTokenCount"] as? Int ?? 0
+        let completionTokens = usage?["candidatesTokenCount"] as? Int ?? 0
+
+        let tokenUsage = TokenUsage(
+            promptTokens: promptTokens,
+            completionTokens: completionTokens
+        )
 
         let finishReason = firstCandidate["finishReason"] as? String
         let reason: FinishReason = switch finishReason {
@@ -207,7 +202,7 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
         return LLMChatResponse(
             id: UUID().uuidString,
             model: request.model,
-            message: message,
+            message: responseMessage,
             usage: tokenUsage,
             finishReason: reason
         )
@@ -221,36 +216,40 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
                         throw LLMProviderError.notConfigured
                     }
 
-                    // Convert messages to Gemini format
+                    // Build messages for Gemini format
                     var contents: [[String: Any]] = []
+
+                    if let systemPrompt = request.systemPrompt {
+                        contents.append([
+                            "role": "user",
+                            "parts": [["text": "System: \(systemPrompt)"]]
+                        ])
+                    }
 
                     for message in request.messages {
                         let role = message.role == .assistant ? "model" : "user"
                         contents.append([
                             "role": role,
-                            "parts": [["text": message.content]],
+                            "parts": [["text": message.content]]
                         ])
                     }
 
                     // Build request body
-                    var body: [String: Any] = [
+                    let body: [String: Any] = [
                         "contents": contents,
                         "generationConfig": [
                             "temperature": request.temperature,
-                            "maxOutputTokens": request.maxTokens ?? 8192,
-                        ],
+                            "maxOutputTokens": request.maxTokens ?? 8192
+                        ]
                     ]
 
-                    if let systemPrompt = request.systemPrompt {
-                        body["systemInstruction"] = ["parts": [["text": systemPrompt]]]
-                    }
+                    // Gemini streaming endpoint
+                    let url = "https://generativelanguage.googleapis.com/v1beta/models/\(request.model):streamGenerateContent?key=\(config.apiKey)"
 
-                    // Make streaming request
-                    let endpoint = "\(baseURL)/models/\(request.model):streamGenerateContent?alt=sse&key=\(config.apiKey ?? "")"
-                    guard let url = URL(string: endpoint) else {
+                    guard let urlObject = URL(string: url) else {
                         throw LLMProviderError.networkError("Invalid URL")
                     }
-                    var urlRequest = URLRequest(url: url)
+                    var urlRequest = URLRequest(url: urlObject)
                     urlRequest.httpMethod = "POST"
                     urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -263,12 +262,9 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
                         throw LLMProviderError.networkError("Stream request failed")
                     }
 
-                    // Process SSE stream
-                    for try await line in bytes.lines where line.hasPrefix("data: ") {
-                        let jsonString = String(line.dropFirst(6))
-
-<<<<<<< HEAD
-                        if let data = jsonString.data(using: .utf8),
+                    // Process streaming response
+                    for try await line in bytes.lines {
+                        if let data = line.data(using: .utf8),
                            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                            let candidates = json["candidates"] as? [[String: Any]],
                            let firstCandidate = candidates.first,
@@ -277,26 +273,15 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
                            let firstPart = parts.first,
                            let text = firstPart["text"] as? String {
                             continuation.yield(LLMStreamChunk(delta: text))
-=======
-                            if let data = jsonString.data(using: .utf8),
-                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                               let candidates = json["candidates"] as? [[String: Any]],
-                               let firstCandidate = candidates.first,
-                               let content = firstCandidate["content"] as? [String: Any],
-                               let parts = content["parts"] as? [[String: Any]],
-                               let firstPart = parts.first,
-                               let text = firstPart["text"] as? String {
-                                continuation.yield(LLMStreamChunk(delta: text))
->>>>>>> Main
 
-                                if let finishReason = firstCandidate["finishReason"] as? String {
-                                    let reason: FinishReason = switch finishReason {
-                                    case "MAX_TOKENS": .length
-                                    case "SAFETY": .contentFilter
-                                    default: .stop
-                                    }
-                                    continuation.yield(LLMStreamChunk(delta: "", finishReason: reason))
+                            if let finishReason = firstCandidate["finishReason"] as? String {
+                                let reason: FinishReason = switch finishReason {
+                                case "MAX_TOKENS": .length
+                                case "SAFETY": .contentFilter
+                                default: .stop
                                 }
+                                continuation.yield(LLMStreamChunk(delta: "", finishReason: reason))
+                                break
                             }
                         }
                     }
@@ -315,15 +300,18 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
         }
 
         let body: [String: Any] = [
-            "model": "models/embedding-001",
-            "content": ["parts": [["text": text]]],
+            "model": "models/text-embedding-004",
+            "content": [
+                "parts": [["text": text]]
+            ]
         ]
 
-        let endpoint = "\(baseURL)/models/embedding-001:embedContent?key=\(config.apiKey ?? "")"
-        guard let url = URL(string: endpoint) else {
+        let url = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=\(config.apiKey)"
+
+        guard let urlObject = URL(string: url) else {
             throw LLMProviderError.networkError("Invalid URL")
         }
-        var urlRequest = URLRequest(url: url)
+        var urlRequest = URLRequest(url: urlObject)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -347,43 +335,15 @@ public final class GeminiProvider: LLMProviderProtocol, @unchecked Sendable {
     }
 
     public func tokenCount(for text: String) async throws -> Int {
-        guard let config = try await LLMConfigurationManager.shared.loadConfiguration(for: id) else {
-            throw LLMProviderError.notConfigured
-        }
-
-        let body: [String: Any] = [
-            "contents": [["parts": [["text": text]]]],
-        ]
-
-        let endpoint = "\(baseURL)/models/gemini-pro:countTokens?key=\(config.apiKey ?? "")"
-        guard let url = URL(string: endpoint) else {
-            throw LLMProviderError.networkError("Invalid URL")
-        }
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await session.data(for: urlRequest)
-
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200
-        else {
-            throw LLMProviderError.networkError("Token count request failed")
-        }
-
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let totalTokens = json["totalTokens"] as? Int
-        else {
-            throw LLMProviderError.invalidResponse("Invalid token count response")
-        }
-
-        return totalTokens
+        // Estimate based on character count (Gemini uses similar tokenization to GPT)
+        text.count / 4
     }
 
     public func getSettings() -> LLMProviderSettings {
         LLMProviderSettings(
-            apiEndpoint: baseURL,
+            apiEndpoint: "https://generativelanguage.googleapis.com",
+            apiVersion: "v1beta",
+            customHeaders: [:],
             timeout: 30,
             retryCount: 3
         )

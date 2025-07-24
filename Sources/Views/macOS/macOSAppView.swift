@@ -28,13 +28,8 @@
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .aikoSheet()
-<<<<<<< HEAD
-        })
-            }
-=======
                 }
             })
->>>>>>> Main
         }
     }
 

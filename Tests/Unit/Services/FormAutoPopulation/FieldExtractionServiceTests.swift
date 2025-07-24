@@ -1,4 +1,4 @@
-@testable import AIKO
+@testable import AppCore
 import XCTest
 
 /// Unit tests for FieldExtractionService covering field extraction accuracy and performance

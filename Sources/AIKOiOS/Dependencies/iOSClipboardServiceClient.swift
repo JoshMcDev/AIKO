@@ -41,25 +41,25 @@
         static let iOSLive = Self(
             copyText: { @Sendable text in
                 await Task { @MainActor in
-                    let client = iOSClipboardServiceClient()
+                    let client = IOSClipboardServiceClient()
                     await client.copyText(text)
                 }.value
             },
             copyData: { @Sendable data, type in
                 await Task { @MainActor in
-                    let client = iOSClipboardServiceClient()
+                    let client = IOSClipboardServiceClient()
                     await client.copyData(data, type: type)
                 }.value
             },
             getText: { @Sendable in
                 await Task { @MainActor in
-                    let client = iOSClipboardServiceClient()
+                    let client = IOSClipboardServiceClient()
                     return await client.getText()
                 }.value
             },
             hasContent: { @Sendable type in
                 await Task { @MainActor in
-                    let client = iOSClipboardServiceClient()
+                    let client = IOSClipboardServiceClient()
                     return await client.hasContent(ofType: type)
                 }.value
             }

@@ -520,13 +520,8 @@ struct APIKeyStepView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
-<<<<<<< HEAD
-                if let url = URL(string: "https://console.anthropic.com/api") ?? URL(string: "https://anthropic.com") {
-                    Link(destination: url) {
-=======
                 if let apiURL = URL(string: "https://console.anthropic.com/api") {
                     Link(destination: apiURL) {
->>>>>>> Main
                     HStack {
                         Image(systemName: "link")
                         Text("console.anthropic.com/api")
@@ -535,10 +530,7 @@ struct APIKeyStepView: View {
                     .font(.subheadline)
                     .foregroundColor(Theme.Colors.aikoAccent)
                     }
-<<<<<<< HEAD
-=======
                     .padding(.vertical, Theme.Spacing.extraSmall)
->>>>>>> Main
                 }
             }
 

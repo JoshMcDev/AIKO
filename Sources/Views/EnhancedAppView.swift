@@ -41,7 +41,7 @@ public struct EnhancedAppView: View {
 
     @ViewBuilder
     private var contentView: some View {
-        WithViewStore(store, observe: { $0 }, content: { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             ZStack {
                 // Animated background gradient
                 AnimatedGradientBackground()
@@ -55,7 +55,7 @@ public struct EnhancedAppView: View {
                 } else {
                     mainContentView(viewStore: viewStore)
                         .pageTransition(isActive: true, from: .trailing)
-        })
+                }
             }
         }
         .onAppear {

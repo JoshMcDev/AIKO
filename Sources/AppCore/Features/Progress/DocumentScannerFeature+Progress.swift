@@ -27,11 +27,7 @@ public extension DocumentScannerFeature.State {
         set {
             // Update our scanning state based on progress feedback
             if let currentSession = newValue.currentSession,
-<<<<<<< HEAD
                newValue.activeSessions[currentSession] != nil {
-=======
-               let _ = newValue.activeSessions[currentSession] {
->>>>>>> Main
                 // Update our progress tracking based on the progress state
                 // This allows for bidirectional sync
                 _progressSessionId = currentSession

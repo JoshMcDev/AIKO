@@ -55,15 +55,8 @@
                 AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
             ]
 
-<<<<<<< HEAD
-            guard let fileURL = audioFileURL else {
-                throw NSError(domain: "VoiceRecording", code: -1, userInfo: [NSLocalizedDescriptionKey: "Audio file URL not available"])
-            }
-            audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
-=======
             guard let audioFileURL else { throw VoiceRecordingError.recordingFailed }
             audioRecorder = try AVAudioRecorder(url: audioFileURL, settings: settings)
->>>>>>> Main
             audioRecorder?.prepareToRecord()
             audioRecorder?.record()
 

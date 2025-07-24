@@ -6,7 +6,7 @@
 //  Example: test_DocumentGeneration_Performance_CompletesUnder200ms()
 //
 
-@testable import AIKO
+@testable import AppCore
 import XCTest
 
 final class FeaturePerformanceTests: XCTestCase {

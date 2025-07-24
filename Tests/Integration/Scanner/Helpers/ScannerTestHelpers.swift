@@ -1,4 +1,4 @@
-@testable import AIKOiOS
+@testable import AppCoreiOS
 @testable import AppCore
 import ComposableArchitecture
 import Foundation

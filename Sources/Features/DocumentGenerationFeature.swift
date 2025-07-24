@@ -67,8 +67,6 @@ public struct DocumentGenerationFeature: @unchecked Sendable {
     @Dependency(\.aiDocumentGenerator) var aiDocumentGenerator
     @Dependency(\.parallelDocumentGenerator) var parallelDocumentGenerator
     @Dependency(\.userProfileService) var userProfileService
-    @Dependency(\.objectActionHandler) var objectActionHandler
-    @Dependency(\.documentGenerationPerformanceMonitor) var performanceMonitor
 
     public init() {}
 
@@ -128,64 +126,9 @@ public struct DocumentGenerationFeature: @unchecked Sendable {
                     }
                 }
 
-                return .run { [requirements = enhancedRequirements, documentTypes = state.selectedDocumentTypes, dfDocumentTypes = state.status.selectedDFDocumentTypes, userProfileService = self.userProfileService, objectActionHandler = self.objectActionHandler, performanceMonitor = self.performanceMonitor] send in
+                return .run { [requirements = enhancedRequirements, documentTypes = state.selectedDocumentTypes, dfDocumentTypes = state.status.selectedDFDocumentTypes, userProfileService = self.userProfileService] send in
                     do {
-                        // Start performance monitoring session
-                        _ = await performanceMonitor.startSession()
                         var documents: [GeneratedDocument] = []
-                        let context = await ActionContext(
-                            userId: (try? userProfileService.loadProfile())?.id.uuidString ?? "anonymous",
-                            sessionId: UUID().uuidString
-                        )
-
-                        // Create actions for document generation
-                        var actions: [ObjectAction] = []
-
-                        // Standard documents
-                        for docType in documentTypes {
-                            let action = ObjectAction(
-                                type: .generate,
-                                objectType: .documentTemplate,
-                                objectId: docType.rawValue,
-                                parameters: ["requirements": .string(requirements)],
-                                context: context,
-                                priority: .high,
-                                estimatedDuration: 5.0,
-                                requiredCapabilities: [.documentGeneration, .naturalLanguageProcessing]
-                            )
-                            actions.append(action)
-                        }
-
-                        // D&F documents
-                        for dfType in dfDocumentTypes {
-                            let action = ObjectAction(
-                                type: .generate,
-                                objectType: .documentTemplate,
-                                objectId: dfType.rawValue,
-                                parameters: ["requirements": .string(requirements), "type": .string("df")],
-                                context: context,
-                                priority: .high,
-                                estimatedDuration: 5.0,
-                                requiredCapabilities: [.documentGeneration, .compliance]
-                            )
-                            actions.append(action)
-                        }
-
-                        // Optimize action plan
-                        let optimizedActions = try await objectActionHandler.optimizeActionPlan(actions)
-
-                        // Execute actions and track performance
-                        for action in optimizedActions {
-                            let result = try await objectActionHandler.executeAction(action)
-
-                            // Learn from execution
-                            try await objectActionHandler.learnFromExecution(result)
-
-                            // Check if we should continue based on performance
-                            if result.metrics.performanceScore < 0.5 || result.metrics.effectivenessScore < 0.5 {
-                                throw AIDocumentGeneratorError.insufficientCredits
-                            }
-                        }
 
                         // Load profile once before generation
                         let profile = try? await userProfileService.loadProfile()
@@ -212,14 +155,8 @@ public struct DocumentGenerationFeature: @unchecked Sendable {
                         documents.append(contentsOf: dfDocs)
 
                         await send(.documentsGenerated(documents))
-
-                        // End performance monitoring session
-                        await performanceMonitor.endSession()
                     } catch {
                         await send(.generationFailed(error.localizedDescription))
-
-                        // End performance monitoring session even on failure
-                        await performanceMonitor.endSession()
                     }
                 }
 

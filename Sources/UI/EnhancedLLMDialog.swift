@@ -13,18 +13,18 @@ public struct EnhancedLLMDialog: View {
     }
 
     public var body: some View {
-        WithViewStore(store, observe: { $0 }, content: { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             SwiftUI.NavigationView {
                 VStack(spacing: 0) {
                     headerView
                     analysisSummaryView(viewStore: viewStore)
                     decisionButtonsView(viewStore: viewStore)
-        })
-                .background(Color.black)
-                .modifier(NavigationBarHiddenModifier())
-                .preferredColorScheme(.dark)
+                }
             }
-        })
+            .background(Color.black)
+            .modifier(NavigationBarHiddenModifier())
+            .preferredColorScheme(.dark)
+        }
     }
 
     // MARK: - Header View
@@ -339,28 +339,28 @@ public struct RequirementsRefinementDialog: View {
     ]
 
     public var body: some View {
-        WithViewStore(store, observe: { $0 }, content: { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             SwiftUI.NavigationView {
                 VStack(spacing: 0) {
                     progressBar
                     questionContent(viewStore: viewStore)
-        })
-                .background(Theme.Colors.aikoBackground)
-                .navigationTitle("Refine Requirements")
-                .navigationConfiguration(
-                    displayMode: .inline,
-                    supportsNavigationBarDisplayMode: true
-                )
-                .toolbar {
-                    ToolbarItem(placement: .automatic) {
-                        Button("Skip") {
-                            // TODO: Handle skip refinement
-                            viewStore.send(.analysis(.showDocumentPicker(true)))
-                        }
+                }
+            }
+            .background(Theme.Colors.aikoBackground)
+            .navigationTitle("Refine Requirements")
+            .navigationConfiguration(
+                displayMode: .inline,
+                supportsNavigationBarDisplayMode: true
+            )
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button("Skip") {
+                        // TODO: Handle skip refinement
+                        viewStore.send(.analysis(.showDocumentPicker(true)))
                     }
                 }
             }
-        })
+        }
     }
 
     // MARK: - Progress Bar
@@ -452,7 +452,7 @@ public struct RequirementsRefinementDialog: View {
             }
         }
         .aikoButton(variant: .primary, size: .medium)
-        .disabled(answers[safe: currentQuestion]?.isEmpty ?? true)
+        .disabled((answers[safe: currentQuestion] ?? "").isEmpty)
     }
 
     // MARK: - Complete Refinement
@@ -483,13 +483,13 @@ public struct RequirementsRefinementDialog: View {
 
 // MARK: - Supporting Types
 
-struct RefinementQuestion {
+struct RefinementQuestion: Sendable {
     let id: String
     let question: String
     let helpText: String
     let inputType: InputType
 
-    enum InputType {
+    enum InputType: Sendable {
         case text
         case currency
         case date

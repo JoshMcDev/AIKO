@@ -13,7 +13,7 @@ struct AcquisitionChatView: View {
                     .ignoresSafeArea()
 
                 chatContent(viewStore: viewStore)
-        })
+            }
             .preferredColorScheme(.dark)
             .alert(
                 "Save Acquisition?",
@@ -31,7 +31,7 @@ struct AcquisitionChatView: View {
             } message: {
                 Text("You've provided enough information to start generating documents. Would you like to save this acquisition and return to the main view?")
             }
-        }
+        })
     }
 
     @ViewBuilder

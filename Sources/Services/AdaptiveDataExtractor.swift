@@ -351,9 +351,8 @@ public class AdaptiveDataExtractor: @unchecked Sendable {
             var matchedPattern: LearnedPattern?
 
             for (_, pattern) in learnedPatterns where patternMatches(group, pattern: pattern) {
-                    matchedPattern = pattern
-                    break
-                }
+                matchedPattern = pattern
+                break
             }
 
             if var pattern = matchedPattern {
@@ -642,8 +641,7 @@ final class FieldNormalizer: @unchecked Sendable {
 
         // Check synonym groups
         for group in synonymGroups where group.contains(where: { cleaned.contains($0) }) {
-                return group[0] // Return the canonical form
-            }
+            return group[0] // Return the canonical form
         }
 
         return cleaned
