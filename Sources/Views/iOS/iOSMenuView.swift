@@ -202,9 +202,9 @@
                                 quickReferencesSection(viewStore: viewStore, item: item)
                             } else {
                                 regularMenuItem(item: item)
-        })
+                            }
                         }
-                    }
+                    })
                 }
                 .padding(Theme.Spacing.medium)
             }
@@ -315,10 +315,10 @@
                         withAnimation(.easeInOut(duration: 0.3)) {
                             viewStore.send(.selectMenuItem(item))
                             isShowing = false
-        })
+                        }
                     }
                 )
-            }
+            })
         }
     }
 

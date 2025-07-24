@@ -10,12 +10,15 @@
             },
             sendEmail: { recipients, subject, body, isHTML, attachments in
                 await withCheckedContinuation { continuation in
-                    MacOSEmailService().sendEmail(
-                        to: recipients,
+                    let configuration = EmailConfiguration(
+                        recipients: recipients,
                         subject: subject,
                         body: body,
                         isHTML: isHTML,
                         attachments: attachments
+                    )
+                    MacOSEmailService().sendEmail(
+                        configuration: configuration
                     ) { success in
                         continuation.resume(returning: success)
                     }
@@ -23,10 +26,13 @@
             },
             showEmailComposer: { recipients, subject, body in
                 await withCheckedContinuation { continuation in
-                    MacOSEmailService().showEmailComposer(
+                    let configuration = EmailComposerConfiguration(
                         recipients: recipients,
                         subject: subject,
                         body: body
+                    )
+                    MacOSEmailService().showEmailComposer(
+                        configuration: configuration
                     ) { result in
                         continuation.resume(returning: result)
                     }

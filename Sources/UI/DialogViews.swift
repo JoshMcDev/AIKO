@@ -28,7 +28,7 @@ public struct LLMConfirmationDialog: View {
                         Text("AI Contract Intelligence Officer")
                             .font(.caption)
                             .foregroundColor(.secondary)
-        })
+                    }
                     .padding(.top, Theme.Spacing.large)
                     .padding(.horizontal, Theme.Spacing.large)
 

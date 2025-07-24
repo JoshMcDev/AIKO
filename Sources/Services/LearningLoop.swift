@@ -324,14 +324,13 @@ private struct InsightGenerator {
 
         // Generate insights from patterns
         for pattern in result.patternsDetected where pattern.significance > 0.7 {
-                insights.append(Insight(
-                    category: categorizePattern(pattern),
-                    title: "Pattern Detected: \(pattern.name)",
-                    description: pattern.description,
-                    actionableSteps: generateSteps(for: pattern),
-                    expectedBenefit: estimateBenefit(of: pattern)
-                ))
-            }
+            insights.append(Insight(
+                category: categorizePattern(pattern),
+                title: "Pattern Detected: \(pattern.name)",
+                description: pattern.description,
+                actionableSteps: generateSteps(for: pattern),
+                expectedBenefit: estimateBenefit(of: pattern)
+            ))
         }
 
         // Generate insights from anomalies

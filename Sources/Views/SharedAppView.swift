@@ -13,14 +13,14 @@ public struct SharedAppView<Services: AppViewPlatformServices>: View {
     }
 
     public var body: some View {
-        WithViewStore(store, observe: { $0 }, content: { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             if !viewStore.isOnboardingCompleted {
                 onboardingView
             } else if !viewStore.isAuthenticated {
                 authenticationView(viewStore: viewStore)
             } else {
                 mainContentView(viewStore: viewStore)
-        })
+            }
         }
         .onAppear {
             store.send(.onAppear)
@@ -301,7 +301,7 @@ struct AppSheetPresentation<Services: AppViewPlatformServices>: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        WithViewStore(store, observe: { $0 }, content: { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             content
                 .sheet(isPresented: .init(
                     get: { viewStore.showingProfile },
@@ -314,7 +314,7 @@ struct AppSheetPresentation<Services: AppViewPlatformServices>: ViewModifier {
                                 action: \.profile
                             )
                         )
-        })
+                    }
                     .aikoSheet()
                 }
                 .sheet(isPresented: .init(

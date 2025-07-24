@@ -33,7 +33,7 @@ public struct OnboardingView: View {
                             Text(viewStore.currentStep.subtitle)
                                 .font(.body)
                                 .foregroundColor(.secondary)
-        })
+                        }
                         .padding(.top, Theme.Spacing.extraLarge)
 
                         // Step Content
@@ -141,7 +141,7 @@ public struct OnboardingView: View {
                     )
                 #endif
             }
-        }
+        })
     }
 }
 

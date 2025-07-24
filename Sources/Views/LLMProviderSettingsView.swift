@@ -23,7 +23,7 @@ struct LLMProviderSettingsView: View {
                     } else {
                         Text("No active provider")
                             .foregroundColor(.secondary)
-        })
+                    }
                 } header: {
                     Text("Active Provider")
                 }
@@ -80,7 +80,7 @@ struct LLMProviderSettingsView: View {
             .onAppear {
                 store.send(.onAppear)
             }
-        }
+        })
     }
 }
 
@@ -272,7 +272,7 @@ struct LLMProviderConfigurationView: View {
                         Spacer()
                         Text(viewStore.provider.name)
                             .foregroundColor(.secondary)
-        })
+                    }
                 } header: {
                     Text("Provider Information")
                 }
@@ -387,6 +387,6 @@ struct LLMProviderConfigurationView: View {
                     .disabled(!viewStore.canSave || viewStore.isValidating)
                 }
             }
-        }
+        })
     }
 }

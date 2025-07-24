@@ -86,7 +86,7 @@ public protocol MediaMetadataServiceProtocol: Actor {
     func analyzeImage(_ data: Data) async throws -> ImageAnalysis
 
     /// Validate metadata extraction results
-    func validateMetadata(_ metadata: [MetadataField]) async -> ValidationResult
+    func validateMetadata(_ metadata: [MetadataField]) async -> MediaValidationResult
 }
 
 // MARK: - Media Workflow Coordinator Protocol
@@ -339,7 +339,7 @@ public struct PhotoAsset: Sendable, Identifiable {
 }
 
 /// Photo album representation
-public struct PhotoAlbum: Sendable, Identifiable {
+public struct PhotoAlbum: Sendable, Identifiable, Equatable {
     public let id: String
     public let title: String
     public let assetCount: Int

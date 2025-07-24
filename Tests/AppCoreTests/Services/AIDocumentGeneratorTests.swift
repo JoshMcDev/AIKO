@@ -1,4 +1,4 @@
-@testable import AIKO
+@testable import AppCore
 @testable import AikoCompat
 @testable import AppCore
 import ComposableArchitecture

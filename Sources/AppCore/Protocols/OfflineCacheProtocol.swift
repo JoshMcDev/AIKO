@@ -8,7 +8,7 @@
 import Foundation
 
 /// Protocol defining the interface for all cache implementations
-public protocol OfflineCacheProtocol {
+public protocol OfflineCacheProtocol: Sendable {
     /// Store a codable object in the cache
     /// - Parameters:
     ///   - object: The object to store

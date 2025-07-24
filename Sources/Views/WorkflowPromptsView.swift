@@ -13,7 +13,7 @@ struct WorkflowPromptsView: View {
                         currentState: context.currentState,
                         automationEnabled: context.automationSettings.enabled
                     )
-        })
+                }
 
                 // Pending Approvals
                 if !viewStore.pendingApprovals.isEmpty {
@@ -56,7 +56,7 @@ struct WorkflowPromptsView: View {
             .padding(Theme.Spacing.large)
             .background(Theme.Colors.aikoSecondary)
             .cornerRadius(Theme.CornerRadius.large)
-        }
+        })
     }
 }
 

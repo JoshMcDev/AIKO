@@ -130,7 +130,7 @@ let package = Package(
                 .copy("Models/AIKO_Updated.xcdatamodeld"),
                 .process("Resources/AppIcon.png"),
                 .process("Resources/SAMIcon.png"),
-                .copy("Resources/LFM2-700M-Unsloth-XL-GraphRAG.mlmodel"),
+                // .copy("Resources/LFM2-700M-Unsloth-XL-GraphRAG.mlmodel"), // Removed - 700MB model causing build hang
                 .copy("Resources/Forms/SF1449_Form.md"),
                 .copy("Resources/Forms/SF33_Form.md"),
                 .copy("Resources/Forms/SF30_Form.md"),

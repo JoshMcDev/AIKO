@@ -297,15 +297,14 @@ extension AdaptiveIntelligenceService: DependencyKey {
 
                 // Analyze repeated sequences
                 for sequence in repeatedActions.sequences where sequence.frequency > 3 {
-                        suggestions.append(AutomationSuggestion(
-                            id: UUID(),
-                            title: "Automate \(sequence.description)",
-                            description: "You've performed this sequence \(sequence.frequency) times",
-                            estimatedTimeSaving: sequence.averageTime * 0.8,
-                            confidence: Double(sequence.frequency) / 10.0,
-                            automationSteps: sequence.steps
-                        ))
-                    }
+                    suggestions.append(AutomationSuggestion(
+                        id: UUID(),
+                        title: "Automate \(sequence.description)",
+                        description: "You've performed this sequence \(sequence.frequency) times",
+                        estimatedTimeSaving: sequence.averageTime * 0.8,
+                        confidence: Double(sequence.frequency) / 10.0,
+                        automationSteps: sequence.steps
+                    ))
                 }
 
                 return suggestions

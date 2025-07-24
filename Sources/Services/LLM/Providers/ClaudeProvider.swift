@@ -233,22 +233,21 @@ public final class ClaudeProvider: LLMProviderProtocol, @unchecked Sendable {
 
                     // Process SSE stream
                     for try await line in bytes.lines where line.hasPrefix("data: ") {
-                            let jsonString = String(line.dropFirst(6))
-                            if jsonString == "[DONE]" {
-                                continuation.finish()
-                                break
-                            }
+                        let jsonString = String(line.dropFirst(6))
+                        if jsonString == "[DONE]" {
+                            continuation.finish()
+                            break
+                        }
 
-                            if let data = jsonString.data(using: .utf8),
-                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                               let type = json["type"] as? String {
-                                if type == "content_block_delta",
-                                   let delta = json["delta"] as? [String: Any],
-                                   let text = delta["text"] as? String {
-                                    continuation.yield(LLMStreamChunk(delta: text))
-                                } else if type == "message_stop" {
-                                    continuation.yield(LLMStreamChunk(delta: "", finishReason: .stop))
-                                }
+                        if let data = jsonString.data(using: .utf8),
+                           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                           let type = json["type"] as? String {
+                            if type == "content_block_delta",
+                               let delta = json["delta"] as? [String: Any],
+                               let text = delta["text"] as? String {
+                                continuation.yield(LLMStreamChunk(delta: text))
+                            } else if type == "message_stop" {
+                                continuation.yield(LLMStreamChunk(delta: "", finishReason: .stop))
                             }
                         }
                     }

@@ -372,13 +372,9 @@ public actor OneTapWorkflowEngine {
         try await Task.sleep(nanoseconds: UInt64(scanDelay * 1_000_000_000))
 
         // Create mock scanned document with realistic data
-<<<<<<< HEAD
-        let mockImageData = Data("mock_government_form_scan_data".utf8)
-=======
         guard let mockImageData = "mock_government_form_scan_data".data(using: .utf8) else {
             throw OneTapError.processingFailed(NSError(domain: "OneTapWorkflow", code: 1005, userInfo: [NSLocalizedDescriptionKey: "Failed to create mock image data"]))
         }
->>>>>>> Main
         let scannedPage = ScannedPage(
             id: UUID(),
             imageData: mockImageData,

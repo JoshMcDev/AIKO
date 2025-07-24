@@ -4,12 +4,11 @@ import OSLog
 
 /// Memory monitoring service for AIKO GraphRAG system
 /// Monitors system memory usage to coordinate LFM2-700M and SLM model coexistence
-@MainActor
-class MemoryMonitor: ObservableObject {
-    // MARK: - Published Properties
+actor MemoryMonitor {
+    // MARK: - Properties
 
-    @Published var currentMemoryStatus: MemoryStatus
-    @Published var isMonitoring: Bool = false
+    var currentMemoryStatus: MemoryStatus
+    var isMonitoring: Bool = false
 
     // MARK: - Private Properties
 
@@ -21,6 +20,10 @@ class MemoryMonitor: ObservableObject {
     private let criticalMemoryThreshold: Double = 0.95 // 95% memory usage
     private let warningMemoryThreshold: Double = 0.85 // 85% memory usage
     private let safeMemoryThreshold: Double = 0.70 // 70% memory usage
+    
+    // Logging state
+    private var lastLogTime = Date.distantPast
+    private var lastMemoryPressure: MemoryPressure = .normal
 
     // MARK: - Initialization
 
@@ -39,7 +42,8 @@ class MemoryMonitor: ObservableObject {
     }
 
     deinit {
-        stopMonitoring()
+        // Cannot call async method from deinit
+        // Memory monitoring will be cleaned up automatically
     }
 
     // MARK: - Public Interface
@@ -51,7 +55,7 @@ class MemoryMonitor: ObservableObject {
             return
         }
 
-        logger.info("🚀 Starting memory monitoring (interval: \(updateInterval)s)")
+        logger.info("🚀 Starting memory monitoring (interval: \(self.updateInterval)s)")
         isMonitoring = true
 
         monitoringTask = Task { [weak self] in
@@ -217,8 +221,6 @@ class MemoryMonitor: ObservableObject {
 
     private func logMemoryChanges(newStatus: MemoryStatus, usagePercentage: Double) {
         // Only log on significant changes or periodically
-        static var lastLogTime = Date.distantPast
-        static var lastMemoryPressure: MemoryPressure = .normal
 
         let now = Date()
         let timeSinceLastLog = now.timeIntervalSince(lastLogTime)

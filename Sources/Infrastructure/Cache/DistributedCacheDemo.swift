@@ -120,11 +120,11 @@ private func demonstrateConsistentHashing() async {
         let key = "test-key-\(i)"
         let node = await hash.getNode(for: key)
         let replicas = await hash.getReplicaNodes(for: key, count: 2)
-        print("   \(key) -> Primary: \(node), Replicas: \(replicas)")
+        print("   \(key) -> Primary: \(node ?? "None"), Replicas: \(replicas)")
     }
 
     // Show load distribution
-    let distribution = await hash.getLoadDistribution(keyCount: 10000)
+    let distribution = await hash.getLoadDistribution()
     print("\n   Load distribution (10,000 keys):")
     for (node, percentage) in distribution.sorted(by: { $0.key < $1.key }) {
         let bar = String(repeating: "█", count: Int(percentage / 2))
@@ -136,7 +136,7 @@ private func demonstrateConsistentHashing() async {
     await hash.removeNode("node-002")
 
     print("   Keys that would migrate:")
-    let testKeys = (0 ..< 20).map { "test-key-\($0)" }
+    let testKeys = Set((0 ..< 20).map { "test-key-\($0)" })
     let affected = await hash.getAffectedKeys(for: "node-002", from: testKeys)
     print("   \(affected.count) keys would be redistributed")
 }

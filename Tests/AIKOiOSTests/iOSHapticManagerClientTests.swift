@@ -1,6 +1,8 @@
 #if os(iOS)
-    @testable import AIKOiOS
     @testable import AppCore
+@testable import AIKOiOSiOS
+    @testable import AppCore
+@testable import AIKOiOS
     import CoreHaptics
     import SwiftUI
     import XCTest

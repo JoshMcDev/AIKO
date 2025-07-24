@@ -39,14 +39,12 @@ public actor MediaMetadataService: MediaMetadataServiceProtocol {
         throw MediaError.unsupportedOperation("Not implemented")
     }
 
-    public func validateMetadata(_: [MetadataField]) async -> ValidationResult {
+    public func validateMetadata(_: [MetadataField]) async -> MediaValidationResult {
         // TODO: Validate metadata fields
-        ValidationResult(
+        MediaValidationResult(
             isValid: true,
-            validatedFields: [],
-            invalidFields: [],
-            warnings: [],
-            completeness: 1.0
+            errors: [],
+            warnings: []
         )
     }
 

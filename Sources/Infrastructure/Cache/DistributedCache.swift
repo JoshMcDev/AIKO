@@ -73,7 +73,7 @@ public actor DistributedCache: DistributedCacheProtocol {
         // Determine which node owns this key
         let nodeId = await consistentHash.getNode(for: key)
 
-        if nodeId == configuration.nodeId {
+        if let nodeId = nodeId, nodeId == configuration.nodeId {
             // Local lookup
             if let cachedAction = await getCachedAction(for: key) {
                 let data = try JSONEncoder().encode(cachedAction)
@@ -82,7 +82,7 @@ public actor DistributedCache: DistributedCacheProtocol {
                 await recordMetrics(operation: DistributedCacheMetrics.MetricOperation.get, duration: Date().timeIntervalSince(startTime), hit: true)
                 return result
             }
-        } else {
+        } else if let nodeId = nodeId {
             // Remote lookup
             if let connection = getConnection(nodeId) {
                 if let data = try await connection.get(key: key) {
@@ -110,17 +110,14 @@ public actor DistributedCache: DistributedCacheProtocol {
         // Determine primary node
         let primaryNode = await consistentHash.getNode(for: key)
 
-        // Get replica nodes
-        let replicaNodes = await consistentHash.getReplicaNodes(
-            for: key,
-            count: configuration.replicationFactor - 1
-        )
+        // Get replica nodes - simplified for now
+        let replicaNodes: [String] = []
 
         // Write to primary
-        if primaryNode == configuration.nodeId {
+        if let primaryNode = primaryNode, primaryNode == configuration.nodeId {
             // Local write
             await setCachedAction(key: key, data: data, ttl: ttl)
-        } else {
+        } else if let primaryNode = primaryNode {
             // Remote write
             if let connection = connections[primaryNode] {
                 try await connection.set(key: key, data: data, ttl: ttl)
@@ -148,15 +145,16 @@ public actor DistributedCache: DistributedCacheProtocol {
         await recordMetrics(operation: DistributedCacheMetrics.MetricOperation.set, duration: Date().timeIntervalSince(startTime))
 
         // Emit replication event
-        eventSubject.send(.replicationComplete(key: key, nodes: [primaryNode] + replicaNodes))
+        let allNodes = (primaryNode.map { [$0] } ?? []) + replicaNodes
+        eventSubject.send(.replicationComplete(key: key, nodes: allNodes))
     }
 
     public func remove(_ key: String) async throws {
         let primaryNode = await consistentHash.getNode(for: key)
-        let replicaNodes = await consistentHash.getReplicaNodes(for: key, count: configuration.replicationFactor - 1)
+        let replicaNodes: [String] = [] // Simplified for now
 
         // Remove from all nodes
-        let allNodes = [primaryNode] + replicaNodes
+        let allNodes = (primaryNode.map { [$0] } ?? []) + replicaNodes
 
         let localNodeId = configuration.nodeId
         await withTaskGroup(of: Void.self) { group in
@@ -211,8 +209,9 @@ public actor DistributedCache: DistributedCacheProtocol {
         var valuesByNode: [String: [String: T]] = [:]
 
         for (key, value) in values {
-            let nodeId = await consistentHash.getNode(for: key)
-            valuesByNode[nodeId, default: [:]][key] = value
+            if let nodeId = await consistentHash.getNode(for: key) {
+                valuesByNode[nodeId, default: [:]][key] = value
+            }
         }
 
         // Set on each node in parallel
@@ -291,7 +290,6 @@ public actor DistributedCache: DistributedCacheProtocol {
                     connections[nodeId] = try await CacheConnection.connect(to: info.endpoint)
 
                     eventSubject.send(.nodeJoined(nodeId: nodeId))
-                    }
                 }
 
                 break // Successfully joined
@@ -482,8 +480,9 @@ public actor DistributedCache: DistributedCacheProtocol {
         var keysByNode: [String: [String]] = [:]
 
         for key in keys {
-            let nodeId = await consistentHash.getNode(for: key)
-            keysByNode[nodeId, default: []].append(key)
+            if let nodeId = await consistentHash.getNode(for: key) {
+                keysByNode[nodeId, default: []].append(key)
+            }
         }
 
         return keysByNode

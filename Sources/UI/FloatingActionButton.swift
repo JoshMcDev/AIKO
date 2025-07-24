@@ -65,7 +65,7 @@ public struct FloatingActionButton: View {
     }
 
     public var body: some View {
-        WithViewStore(store, observe: { $0 }, content: { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             mainButton(viewStore: viewStore)
                 .animation(.interpolatingSpring(stiffness: 300, damping: 30), value: viewStore.isAnimating)
                 .animation(.easeInOut(duration: animationDuration), value: viewStore.opacity)
@@ -76,14 +76,14 @@ public struct FloatingActionButton: View {
                 .onChange(of: viewStore.dragOffset, perform: { offset in
                     withAnimation(.interpolatingSpring(stiffness: 400, damping: 25)) {
                         dragOffset = CoreFoundation.CGSize(width: offset.width, height: offset.height)
-        })
+                    }
                 })
                 .onChange(of: viewStore.isAnimating, perform: { isAnimating in
                     if isAnimating {
                         triggerButtonAnimation()
                     }
                 })
-        })
+        }
     }
 
     @ViewBuilder
@@ -127,7 +127,7 @@ public struct FloatingActionButton: View {
 
     @ViewBuilder
     private var buttonContent: some View {
-        WithViewStore(store, observe: { $0 }, content: { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             ZStack {
                 // Primary scan icon
                 Image(systemName: "doc.text.viewfinder")
@@ -140,16 +140,16 @@ public struct FloatingActionButton: View {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .scaleEffect(1.2)
-        })
+                }
             }
-        })
+        }
     }
 
     // MARK: - Button Background
 
     @ViewBuilder
     private var buttonBackground: some View {
-        WithViewStore(store, observe: { $0 }, content: { _ in
+        WithViewStore(store, observe: { $0 }) { _ in
             Circle()
                 .fill(buttonGradient)
                 .overlay(
@@ -163,7 +163,7 @@ public struct FloatingActionButton: View {
                             lineWidth: 1
                         )
                 )
-        })
+        }
     }
 
     private var buttonGradient: LinearGradient {
@@ -249,7 +249,7 @@ public struct FloatingActionButtonContainer: View {
     }
 
     public var body: some View {
-        WithViewStore(store, observe: { $0 }, content: { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             GeometryReader { geometry in
                 ZStack {
                     if viewStore.shouldShowButton {
@@ -264,11 +264,11 @@ public struct FloatingActionButtonContainer: View {
                                 .interpolatingSpring(stiffness: 300, damping: 30),
                                 value: viewStore.position
                             )
-        })
+                    }
                 }
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
-        })
+        }
     }
 
     private func calculatePosition(for position: FloatingPosition, in geometry: GeometryProxy) -> CoreFoundation.CGPoint {

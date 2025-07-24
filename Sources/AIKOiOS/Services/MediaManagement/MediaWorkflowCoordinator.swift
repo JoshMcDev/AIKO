@@ -36,9 +36,8 @@ public actor MediaWorkflowCoordinator: MediaWorkflowCoordinatorProtocol {
     public func getExecutionResults(_ handle: WorkflowExecutionHandle) async throws -> WorkflowExecutionResult {
         // TODO: Get execution results
         WorkflowExecutionResult(
-            handle: handle,
-            status: .failed,
-            executionTime: 0.0
+            executionHandle: handle,
+            status: .failed
         )
     }
 
@@ -118,6 +117,18 @@ public actor MediaWorkflowCoordinator: MediaWorkflowCoordinatorProtocol {
 }
 
 // MARK: - Private Types
+
+private struct ProcessedAsset {
+    let assetId: UUID
+    let resultData: Data?
+    let metadata: [String: String]
+}
+
+private struct WorkflowError {
+    let message: String
+    let stepIndex: Int?
+    let assetId: UUID?
+}
 
 private struct WorkflowExecutionState {
     let handle: WorkflowExecutionHandle

@@ -9,7 +9,7 @@ public func demonstrateCacheWarming() async throws {
 
     // Setup dependencies
     @Dependency(\.objectActionCache) var cache
-    @Dependency(\.objectActionHandler) var handler
+    @Dependency(\.optimizedObjectActionHandler) var handler
 
     let warmingStrategy = CacheWarmingStrategy(
         cache: cache,
@@ -153,7 +153,7 @@ public func demonstrateCacheWarming() async throws {
 /// Demonstrate the benefits of cache warming
 private func demonstrateWarmingBenefits() async {
     @Dependency(\.objectActionCache) var cache
-    @Dependency(\.objectActionHandler) var handler
+    @Dependency(\.optimizedObjectActionHandler) var handler
 
     print("   Comparing cold vs warm cache performance...")
 
@@ -225,7 +225,7 @@ public enum CacheWarmingDemoRunner {
             // Initialize dependencies
             try await withDependencies {
                 $0.objectActionCache = ObjectActionCache()
-                $0.objectActionHandler = .live
+                $0.optimizedObjectActionHandler = .live
             } operation: {
                 try await demonstrateCacheWarming()
             }

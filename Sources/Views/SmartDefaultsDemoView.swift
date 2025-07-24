@@ -38,7 +38,7 @@ struct SmartDefaultsDemoView: View {
                         formFieldsSection(viewStore)
                         confidenceMetricsSection(viewStore)
                         actionButtonsSection(viewStore)
-        })
+                    }
                 }
                 .padding()
             }
@@ -49,7 +49,7 @@ struct SmartDefaultsDemoView: View {
                 .onAppear {
                     viewStore.send(.onAppear)
                 }
-        }
+        })
     }
 
     // MARK: - Header Section

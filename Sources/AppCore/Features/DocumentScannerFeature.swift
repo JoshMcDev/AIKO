@@ -84,7 +84,7 @@ public struct DocumentScannerFeature: Sendable {
         // Session management
         public var scanSession: ScanSession?
         public var stagingPage: SessionPage?
-        public var batchOperationStatus: BatchOperationStatus = .init()
+        public var batchOperationStatus: BatchOperationStatus = .pending
 
         // Scanner configuration
         public var enableImageEnhancement: Bool = true
@@ -1078,13 +1078,7 @@ public struct DocumentScannerFeature: Sendable {
 
             case let .batchProcessingStarted(session):
                 state.scanSession = session
-                state.batchOperationStatus = BatchOperationStatus(
-                    isRunning: true,
-                    progress: 0.0,
-                    completedCount: session.processedPageCount,
-                    totalCount: session.pageCount,
-                    currentOperation: "Starting batch processing..."
-                )
+                state.batchOperationStatus = .running
                 return Effect.none
 
             case .pauseBatchProcessing:
@@ -1103,13 +1097,7 @@ public struct DocumentScannerFeature: Sendable {
                 }
 
             case let .batchOperationProgress(progress):
-                state.batchOperationStatus = BatchOperationStatus(
-                    isRunning: state.batchOperationStatus.isRunning,
-                    progress: progress,
-                    completedCount: Int(progress * Double(state.batchOperationStatus.totalCount)),
-                    totalCount: state.batchOperationStatus.totalCount,
-                    currentOperation: "Processing pages..."
-                )
+                state.batchOperationStatus = .running
                 return Effect.none
 
             case let .batchOperationPageCompleted(_, result):
@@ -1128,13 +1116,7 @@ public struct DocumentScannerFeature: Sendable {
                 let total = session.pageCount
                 let isCompleted = completed >= total
 
-                state.batchOperationStatus = BatchOperationStatus(
-                    isRunning: !isCompleted,
-                    progress: total > 0 ? Double(completed) / Double(total) : 1.0,
-                    completedCount: completed,
-                    totalCount: total,
-                    currentOperation: isCompleted ? "Batch processing completed" : "Processing pages..."
-                )
+                state.batchOperationStatus = isCompleted ? .completed : .running
 
                 return Effect.none
 
@@ -1155,12 +1137,7 @@ public struct DocumentScannerFeature: Sendable {
                 state.scanSession = session
                 // Update batch operation status based on session state
                 if case let .inProgress(completed, total) = session.batchOperationState {
-                    state.batchOperationStatus = BatchOperationStatus(
-                        isRunning: true,
-                        progress: total > 0 ? Double(completed) / Double(total) : 0.0,
-                        completedCount: completed,
-                        totalCount: total
-                    )
+                    state.batchOperationStatus = completed >= total ? .completed : .running
                 }
                 return Effect.none
             }

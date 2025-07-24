@@ -1,4 +1,4 @@
-@testable import AIKO
+@testable import AppCore
 import Dependencies
 import Foundation
 import XCTest

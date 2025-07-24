@@ -40,7 +40,14 @@ final class OfflineCacheManager: ObservableObject {
     private init(configuration: OfflineCacheConfiguration = .default) {
         self.configuration = configuration
         memoryCache = MemoryCache(configuration: configuration)
-        diskCache = DiskCache(configuration: configuration)
+        
+        do {
+            diskCache = try DiskCache(configuration: configuration)
+        } catch {
+            // Fallback to a basic disk cache if initialization fails
+            diskCache = try! DiskCache()
+        }
+        
         secureCache = SecureCache(configuration: configuration)
 
         logger.info("OfflineCacheManager initialized with max size: \(configuration.maxSize)")
@@ -248,7 +255,7 @@ final class OfflineCacheManager: ObservableObject {
 
         guard currentSize > configuration.maxSize else { return }
 
-        logger.warning("Cache size \(currentSize) exceeds limit \(configuration.maxSize)")
+        logger.warning("Cache size \(currentSize) exceeds limit \(self.configuration.maxSize)")
 
         // Apply eviction policy
         switch configuration.evictionPolicy {

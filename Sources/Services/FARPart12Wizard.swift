@@ -327,7 +327,7 @@ extension FARPart12Wizard: DependencyKey {
                 else {
                     // Return completion step or throw error if not found
                     guard let completionStep = wizardSteps["determination_complete"] else {
-                        throw WizardError.stepNotFound("determination_complete")
+                        throw FARPart12WizardError.stepNotFound("determination_complete")
                     }
                     return completionStep
                 }
@@ -524,6 +524,7 @@ public enum FARPart12WizardError: Error {
     case invalidStep
     case missingAnswer
     case invalidAnswerType
+    case stepNotFound(String)
 }
 
 // MARK: - Test Value

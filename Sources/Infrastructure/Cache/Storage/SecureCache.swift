@@ -241,6 +241,64 @@ public actor SecureCache: OfflineCacheProtocol {
             logger.debug("Removed \(expiredKeys.count) expired secure entries")
         }
     }
+    
+    /// Remove expired secure entries (alias)
+    public func removeExpiredSecureEntries() async {
+        await removeExpiredEntries()
+    }
+    
+    /// Get metadata for a key
+    func getMetadata(forKey key: String) async -> OfflineCacheMetadata? {
+        guard let meta = metadata[key], !meta.isExpired else { return nil }
+        
+        return OfflineCacheMetadata(
+            key: key,
+            size: meta.size,
+            contentType: .userData,
+            createdAt: meta.createdAt,
+            lastAccessed: meta.lastAccessedAt,
+            accessCount: meta.accessCount,
+            expiresAt: meta.expiresAt
+        )
+    }
+    
+    /// Check cache health
+    func checkHealth() async -> CacheHealthStatus {
+        let totalEntries = metadata.count
+        let _ = metadata.values.filter { $0.isExpired }.count
+        let totalSize = metadata.values.reduce(0) { $0 + $1.size }
+        
+        return CacheHealthStatus(
+            level: .healthy,
+            totalSize: totalSize,
+            maxSize: configuration.maxSize,
+            entryCount: totalEntries,
+            hitRate: 0.0, // TODO: Track actual hit rate
+            lastCleanup: Date(),
+            issues: []
+        )
+    }
+    
+    /// Export all data
+    func exportAllData() async -> SendableExportData {
+        var exportData: SendableExportData = [:]
+        
+        for (key, meta) in metadata {
+            if !meta.isExpired {
+                // For security, we export only metadata, not the actual data
+                exportData[key] = [
+                    "createdAt": meta.createdAt.timeIntervalSince1970,
+                    "lastAccessedAt": meta.lastAccessedAt.timeIntervalSince1970,
+                    "expiresAt": meta.expiresAt?.timeIntervalSince1970 ?? 0,
+                    "accessCount": meta.accessCount,
+                    "size": meta.size,
+                    "note": "Data not exported for security reasons"
+                ]
+            }
+        }
+        
+        return exportData
+    }
 
     /// Encrypt data using AES-GCM
     private func encryptData(_ data: Data) throws -> Data {
@@ -265,7 +323,7 @@ public actor SecureCache: OfflineCacheProtocol {
         do {
             let decoder = JSONDecoder()
             metadata = try decoder.decode([String: SecureCacheMetadata].self, from: data)
-            logger.debug("Loaded secure metadata with \(metadata.count) entries")
+            logger.debug("Loaded secure metadata with \(self.metadata.count) entries")
         } catch {
             logger.error("Failed to load secure metadata: \(error)")
             metadata = [:]

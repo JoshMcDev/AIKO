@@ -14,6 +14,18 @@ struct EnhancedDocumentGenerationView: View {
     @Environment(\.sizeCategory) private var sizeCategory
     @Dependency(\.hapticManager) var hapticManager
 
+    init(
+        store: StoreOf<DocumentGenerationFeature>,
+        isChatMode: Bool,
+        loadedAcquisition: AppCore.Acquisition?,
+        loadedAcquisitionDisplayName: String?
+    ) {
+        self.store = store
+        self.isChatMode = isChatMode
+        self.loadedAcquisition = loadedAcquisition
+        self.loadedAcquisitionDisplayName = loadedAcquisitionDisplayName
+    }
+
     struct ViewState: Equatable {
         let analysisConversationHistory: [String]
         let analysisIsAnalyzingRequirements: Bool
@@ -39,7 +51,7 @@ struct EnhancedDocumentGenerationView: View {
     }
 
     var body: some View {
-        WithViewStore(store, observe: ViewState.init, content: { viewStore in
+        WithViewStore(store, observe: ViewState.init) { viewStore in
             VStack(spacing: 0) {
                 // Main Content Area with parallax effect
                 ScrollView(.vertical, showsIndicators: true) {
@@ -55,7 +67,7 @@ struct EnhancedDocumentGenerationView: View {
                                     insertion: .scale(scale: 0.9).combined(with: .opacity),
                                     removal: .scale(scale: 1.1).combined(with: .opacity)
                                 ))
-        })
+                            }
 
                             // Enhanced document selection
                             EnhancedDocumentTypesSection(

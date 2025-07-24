@@ -30,7 +30,7 @@
         }
 
         public func createSidebarNavigation(
-            @ViewBuilder _: @escaping () -> some View,
+            @ViewBuilder sidebar: @escaping () -> some View,
             @ViewBuilder detail: @escaping () -> some View
         ) -> AnyView {
             // iOS doesn't have true sidebar navigation, fall back to detail view

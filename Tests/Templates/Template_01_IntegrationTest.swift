@@ -6,7 +6,7 @@
 //  Example: test_SAMGovAPI_IntegratesWith_LocalCache_SyncsCorrectly()
 //
 
-@testable import AIKO
+@testable import AppCore
 import XCTest
 
 final class IntegrationTestName: XCTestCase {

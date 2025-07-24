@@ -1,4 +1,5 @@
-@testable import AIKO
+@testable import AppCore
+@testable import AIKOiOS
 import ComposableArchitecture
 import XCTest
 

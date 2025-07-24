@@ -316,11 +316,7 @@ struct EmptyStateView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title). \(message)")
-<<<<<<< HEAD
         .accessibilityHint(actionTitle.map { "Action available: \($0)" } ?? "")
-=======
-        .accessibilityHint(actionTitle != nil ? "Action available: \(actionTitle ?? "")" : "")
->>>>>>> Main
     }
 }
 

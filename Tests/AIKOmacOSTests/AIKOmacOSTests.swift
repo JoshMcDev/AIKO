@@ -1,4 +1,4 @@
-@testable import AIKOmacOS
+@testable import AppCoremacOS
 import Testing
 
 struct AIKOmacOSTests {

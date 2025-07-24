@@ -1,5 +1,10 @@
-@testable import AIKOiOS
+#if os(iOS)
 @testable import AppCore
+@testable import AIKOiOS
+@testable import AIKOiOSiOS
+@testable import AppCore
+@testable import AIKOiOS
+@testable import AIKOiOS
 import ComposableArchitecture
 import SwiftUI
 import ViewInspector
@@ -625,3 +630,4 @@ struct MediaSettingsView: View {
         }
     }
 }
+#endif

@@ -1,4 +1,4 @@
-@testable import AIKO
+@testable import AppCore
 import XCTest
 
 class UserPatternLearningEngineTests: XCTestCase {

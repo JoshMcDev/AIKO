@@ -3,6 +3,7 @@
     import AppCore
     @preconcurrency import CoreImage
     import Foundation
+    import os
     import UIKit
     import Vision
 
@@ -35,6 +36,53 @@
                 }
             )
         }()
+    }
+
+    // MARK: - Progress Tracker
+    
+    private final class ProgressTracker: Sendable {
+        private let totalSteps: Int
+        private let startTime: CFAbsoluteTime
+        private let options: DocumentImageProcessor.ProcessingOptions
+        private let currentStepIndex = OSAllocatedUnfairLock(initialState: 0)
+        
+        init(totalSteps: Int, startTime: CFAbsoluteTime, options: DocumentImageProcessor.ProcessingOptions) {
+            self.totalSteps = totalSteps
+            self.startTime = startTime
+            self.options = options
+        }
+        
+        func makeUpdateProgress() -> @Sendable (ProcessingStep, Double) -> Void {
+            { [weak self] step, stepProgress in
+                guard let self = self else { return }
+                
+                let currentIndex = self.currentStepIndex.withLock { index in
+                    let current = index
+                    if stepProgress >= 1.0 {
+                        index += 1
+                    }
+                    return current
+                }
+                
+                let overallProgress = (Double(currentIndex) + stepProgress) / Double(self.totalSteps)
+                let remainingTime = self.estimateRemainingTime(progress: overallProgress)
+                
+                self.options.progressCallback?(ProcessingProgress(
+                    currentStep: step,
+                    stepProgress: stepProgress,
+                    overallProgress: overallProgress,
+                    estimatedTimeRemaining: remainingTime
+                ))
+            }
+        }
+        
+        private func estimateRemainingTime(progress: Double) -> TimeInterval? {
+            guard progress > 0 else { return nil }
+            let elapsedTime = CFAbsoluteTimeGetCurrent() - startTime
+            let estimatedTotalTime = elapsedTime / progress
+            let remainingTime = max(0, estimatedTotalTime - elapsedTime)
+            return remainingTime
+        }
     }
 
     // MARK: - Live Implementation
@@ -87,29 +135,16 @@
         ) async throws -> DocumentImageProcessor.ProcessingResult {
             var processedImage = ciImage
             let totalSteps = mode == .documentScanner ? 8 : (mode == .enhanced ? 6 : 3)
-            var currentStepIndex = 0
-
-            func updateProgress(step: ProcessingStep, stepProgress: Double = 1.0) {
-                let overallProgress = (Double(currentStepIndex) + stepProgress) / Double(totalSteps)
-                let remainingTime = estimateRemainingTime(startTime: startTime, progress: overallProgress)
-
-                options.progressCallback?(ProcessingProgress(
-                    currentStep: step,
-                    stepProgress: stepProgress,
-                    overallProgress: overallProgress,
-                    estimatedTimeRemaining: remainingTime
-                ))
-
-                if stepProgress >= 1.0 {
-                    currentStepIndex += 1
-                }
-            }
+            
+            // Create a helper to track progress without capturing mutable state
+            let progressTracker = ProgressTracker(totalSteps: totalSteps, startTime: startTime, options: options)
+            let updateProgress = progressTracker.makeUpdateProgress()
 
             // Step 1: Preprocessing
-            updateProgress(step: .preprocessing, stepProgress: 0.0)
+            updateProgress(.preprocessing, 0.0)
             processedImage = try performPreprocessing(processedImage, options: options)
             appliedFilters.append("preprocessing")
-            updateProgress(step: .preprocessing, stepProgress: 1.0)
+            updateProgress(.preprocessing, 1.0)
 
             // Document Scanner Mode: Edge Detection and Perspective Correction
             if mode == .documentScanner {
@@ -127,48 +162,48 @@
             }
 
             // Step 2: Basic enhancement (both modes)
-            updateProgress(step: .enhancement, stepProgress: 0.0)
+            updateProgress(.enhancement, 0.0)
             processedImage = try performBasicEnhancement(processedImage, options: options)
             appliedFilters.append("basic_enhancement")
-            updateProgress(step: .enhancement, stepProgress: mode == .basic ? 1.0 : 0.5)
+            updateProgress(.enhancement, mode == .basic ? 1.0 : 0.5)
 
             if mode == .enhanced {
                 // Step 3: Advanced enhancement
                 processedImage = try performAdvancedEnhancement(processedImage, options: options)
                 appliedFilters.append("advanced_enhancement")
-                updateProgress(step: .enhancement, stepProgress: 1.0)
+                updateProgress(.enhancement, 1.0)
 
                 // Step 4: Denoising
-                updateProgress(step: .denoising, stepProgress: 0.0)
+                updateProgress(.denoising, 0.0)
                 processedImage = try performDenoising(processedImage, options: options)
                 appliedFilters.append("denoising")
-                updateProgress(step: .denoising, stepProgress: 1.0)
+                updateProgress(.denoising, 1.0)
 
                 // Step 5: Advanced sharpening
-                updateProgress(step: .sharpening, stepProgress: 0.0)
+                updateProgress(.sharpening, 0.0)
                 processedImage = try performAdvancedSharpening(processedImage, options: options)
                 appliedFilters.append("advanced_sharpening")
-                updateProgress(step: .sharpening, stepProgress: 1.0)
+                updateProgress(.sharpening, 1.0)
 
                 // Step 6: OCR optimization
                 if options.optimizeForOCR {
-                    updateProgress(step: .optimization, stepProgress: 0.0)
+                    updateProgress(.optimization, 0.0)
                     processedImage = try performOCROptimization(processedImage, options: options)
                     appliedFilters.append("ocr_optimization")
-                    updateProgress(step: .optimization, stepProgress: 1.0)
+                    updateProgress(.optimization, 1.0)
                 }
             } else {
                 // Basic mode: simple sharpening
-                updateProgress(step: .sharpening, stepProgress: 0.0)
+                updateProgress(.sharpening, 0.0)
                 processedImage = try performBasicSharpening(processedImage, options: options)
                 appliedFilters.append("basic_sharpening")
-                updateProgress(step: .sharpening, stepProgress: 1.0)
+                updateProgress(.sharpening, 1.0)
             }
 
             // Final step: Quality analysis
-            updateProgress(step: .qualityAnalysis, stepProgress: 0.0)
+            updateProgress(.qualityAnalysis, 0.0)
             let qualityMetrics = try analyzeQuality(processedImage, originalImage: ciImage)
-            updateProgress(step: .qualityAnalysis, stepProgress: 1.0)
+            updateProgress(.qualityAnalysis, 1.0)
 
             // Convert to data
             guard let finalCGImage = context.createCGImage(processedImage, from: processedImage.extent) else {
@@ -1014,12 +1049,4 @@
         }
 
         // MARK: - Helper Methods
-
-        private func estimateRemainingTime(startTime: CFAbsoluteTime, progress: Double) -> TimeInterval? {
-            guard progress > 0.1 else { return nil }
-
-            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-            let totalEstimated = elapsed / progress
-            return totalEstimated - elapsed
-        }
     }#endif
